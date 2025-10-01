@@ -13,7 +13,6 @@
       min-height: 100vh;
       margin: 0;
     }
-
     .container {
       background: #fff;
       padding: 20px 30px;
@@ -23,12 +22,7 @@
       width: 600px;
       max-width: 95%;
     }
-
-    h2 {
-      margin-bottom: 15px;
-      color: #00796b;
-    }
-
+    h2 { margin-bottom: 15px; color: #00796b; }
     input[type="file"], button {
       margin: 10px 5px;
       padding: 10px 15px;
@@ -37,28 +31,15 @@
       font-size: 14px;
       cursor: pointer;
     }
-
-    input[type="file"] {
-      background: #e0f2f1;
-    }
-
-    button {
-      background: #00796b;
-      color: #fff;
-      transition: background 0.3s;
-    }
-
-    button:hover {
-      background: #004d40;
-    }
-
+    input[type="file"] { background: #e0f2f1; }
+    button { background: #00796b; color: #fff; transition: background 0.3s; }
+    button:hover { background: #004d40; }
     canvas {
       border: 2px dashed #bdbdbd;
       border-radius: 10px;
       margin-top: 15px;
       max-width: 100%;
     }
-
     #result {
       margin-top: 15px;
       font-size: 18px;
@@ -92,20 +73,19 @@
     <div id="result">Click 2 points: (1) Tragus, (2) C7</div>
   </div>
 
+  <!-- ✅ All scripts go here, before </body> -->
   <script>
     function toggleReference(btn) {
       const ref = document.getElementById("reference");
       if (ref.style.display === "none") {
-        ref.style.display = "block"; // show
+        ref.style.display = "block";
         btn.textContent = "Hide Instructions";
       } else {
-        ref.style.display = "none"; // hide
+        ref.style.display = "none";
         btn.textContent = "Show Instructions";
       }
     }
-  </script>
-</body>
-  <script>
+
     const upload = document.getElementById('upload');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -120,7 +100,7 @@
       const reader = new FileReader();
       reader.onload = (ev) => {
         img.onload = () => {
-          canvas.width = img.width * 0.6;  // scale for display
+          canvas.width = img.width * 0.6;
           canvas.height = img.height * 0.6;
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           points = [];
@@ -155,7 +135,7 @@
       points = [];
       result.textContent = "Click 2 points: (1) Tragus, (2) C7";
     });
-    
+
     function drawLineAndCalculate() {
       ctx.strokeStyle = "blue";
       ctx.beginPath();
@@ -170,20 +150,16 @@
 
       if (angleDeg < 0) angleDeg += 180;
       if (Tx > Cx) {
-
         if (angleDeg > 90) angleDeg = 180 - angleDeg;
       } else {
-   
         angleDeg = 180 - angleDeg;
         if (angleDeg > 90) angleDeg = 180 - angleDeg;
-        }
+      }
       result.textContent = `CVA = ${angleDeg.toFixed(2)}°`;
     }
   </script>
 </body>
 </html>
-
-
 
 
 
