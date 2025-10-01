@@ -77,14 +77,22 @@
     <div id="result">Click 2 points: (1) Tragus, (2) C7</div>
   </div>
   
-  <button onclick="document.getElementById('help').style.display='block'">
-  Show Reference
-  </button>
+  <button onclick=""toggleReference()">Show/Hide Reference</button>
 
-  <div id="help" style="display:none; margin-top:10px;">
-    <h3>Reference</h3>
-    <img src="tragus.jpg" alt="Reference" width="300">
+  <div id="reference" style="display:none; margin-top:20px;">
+    <h3>Reference Guide</h3>
+    <img src="tragus.jpg" alt="Reference points for CVA" width="300">
+    <p>Click tragus (ear) first, then C7 (neck base).</p>
   </div>
+  <script>
+    function toggleReference() {
+      const ref = document.getElementById("reference");
+      if (ref.style.display === "none") {
+        ref.style.display = "block"; // show
+      } else {
+        ref.style.display = "none"; // hide
+      }
+    }
 
   <script>
     const upload = document.getElementById('upload');
@@ -163,6 +171,7 @@
   </script>
 </body>
 </html>
+
 
 
 
