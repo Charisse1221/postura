@@ -13,6 +13,7 @@
       min-height: 100vh;
       margin: 0;
     }
+
     .container {
       background: #fff;
       padding: 20px 30px;
@@ -22,7 +23,12 @@
       width: 600px;
       max-width: 95%;
     }
-    h2 { margin-bottom: 15px; color: #00796b; }
+
+    h1, h2 {
+      margin-bottom: 15px;
+      color: #00796b;
+    }
+
     input[type="file"], button {
       margin: 10px 5px;
       padding: 10px 15px;
@@ -31,15 +37,28 @@
       font-size: 14px;
       cursor: pointer;
     }
-    input[type="file"] { background: #e0f2f1; }
-    button { background: #00796b; color: #fff; transition: background 0.3s; }
-    button:hover { background: #004d40; }
+
+    input[type="file"] {
+      background: #e0f2f1;
+    }
+
+    button {
+      background: #00796b;
+      color: #fff;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #004d40;
+    }
+
     canvas {
       border: 2px dashed #bdbdbd;
       border-radius: 10px;
       margin-top: 15px;
       max-width: 100%;
     }
+
     #result {
       margin-top: 15px;
       font-size: 18px;
@@ -50,42 +69,53 @@
 </head>
 <body>
   <div class="container">
-    <h2>POSTURA</h2>
 
-    <!-- Toggle Button for Instructions + Reference -->
-    <button onclick="toggleReference(this)">Show Instructions</button>
-
-    <!-- Instructions + Reference (hidden by default) -->
-    <div id="reference" style="display:none; margin-top:20px;">
-      <h3>Instructions</h3>
-      <p>1. Upload a clear side-view photo.<br>
-         2. Click on the <b>tragus (ear)</b> first.<br>
-         3. Then click on <b>C7 (neck base)</b>.<br>
-         4. The system will calculate your CVA angle.</p>
-      <img src="tragus.jpg" alt="Reference points for CVA" width="300">
+    <!-- FRONT PAGE -->
+    <div id="frontPage">
+      <h1>POSTURA</h1>
+      <p>
+        Welcome to <b>POSTURA</b> — a tool to help you measure 
+        your <b>Cervical Vertebral Angle (CVA)</b> for posture assessment.
+      </p>
+      <div id="reference">
+        <h3>Instructions</h3>
+        <p>
+          1. Upload a clear side-view photo.<br>
+          2. Click on the <b>tragus (ear)</b> first.<br>
+          3. Then click on <b>C7 (neck base)</b>.<br>
+          4. The system will calculate your CVA angle.
+        </p>
+        <img src="tragus.jpg" alt="Reference points" width="300">
+      </div>
+      <button class="btn" onclick="startApp()">Start</button>
     </div>
 
-    <!-- Upload + Canvas -->
-    <input type="file" id="upload" accept="image/*">
-    <button id="resetBtn">Reset Points</button>
-    <br>
-    <canvas id="canvas"></canvas>
-    <div id="result">Click 2 points: (1) Tragus, (2) C7</div>
+    <!-- MAIN APP -->
+    <div id="mainApp" style="display:none;">
+      <h2>POSTURA</h2>
+      <input type="file" id="upload" accept="image/*"><br><br>
+      <button id="resetBtn" class="btn">Reset Points</button>
+      <br>
+      <canvas id="canvas"></canvas>
+      <div id="result">Click 2 points: (1) Tragus, (2) C7</div>
+      <br>
+      <button class="btn" onclick="goBack()">⬅ Back to Instructions</button>
+    </div>
+
   </div>
 
-  <!-- ✅ All scripts go here, before </body> -->
+  <!-- Scripts -->
   <script>
-    function toggleReference(btn) {
-      const ref = document.getElementById("reference");
-      if (ref.style.display === "none") {
-        ref.style.display = "block";
-        btn.textContent = "Hide Instructions";
-      } else {
-        ref.style.display = "none";
-        btn.textContent = "Show Instructions";
-      }
+    function startApp() {
+      document.getElementById("frontPage").style.display = "none";
+      document.getElementById("mainApp").style.display = "block";
+    }
+    function goBack() {
+      document.getElementById("mainApp").style.display = "none";
+      document.getElementById("frontPage").style.display = "block";
     }
 
+    // ===== CVA Script =====
     const upload = document.getElementById('upload');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -160,8 +190,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
