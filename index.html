@@ -70,29 +70,37 @@
 <body>
   <div class="container">
     <h2>POSTURA</h2>
+
+    <!-- Toggle Button for Instructions + Reference -->
+    <button onclick="toggleReference(this)">Show Instructions</button>
+
+    <!-- Instructions + Reference (hidden by default) -->
+    <div id="reference" style="display:none; margin-top:20px;">
+      <h3>Instructions</h3>
+      <p>1. Upload a clear side-view photo.<br>
+         2. Click on the <b>tragus (ear)</b> first.<br>
+         3. Then click on <b>C7 (neck base)</b>.<br>
+         4. The system will calculate your CVA angle.</p>
+      <img src="tragus.jpg" alt="Reference points for CVA" width="300">
+    </div>
+
+    <!-- Upload + Canvas -->
     <input type="file" id="upload" accept="image/*">
     <button id="resetBtn">Reset Points</button>
     <br>
     <canvas id="canvas"></canvas>
     <div id="result">Click 2 points: (1) Tragus, (2) C7</div>
   </div>
-  
-  <!-- Fixed button -->
-  <button onclick="toggleReference()">Show/Hide Reference</button>
-
-  <div id="reference" style="display:none; margin-top:20px;">
-    <h3>Reference Guide</h3>
-    <img src="tragus.jpg" alt="Reference points for CVA" width="300">
-    <p>Click tragus (ear) first, then C7 (neck base).</p>
-  </div>
 
   <script>
-    function toggleReference() {
+    function toggleReference(btn) {
       const ref = document.getElementById("reference");
       if (ref.style.display === "none") {
         ref.style.display = "block"; // show
+        btn.textContent = "Hide Instructions";
       } else {
         ref.style.display = "none"; // hide
+        btn.textContent = "Show Instructions";
       }
     }
   </script>
@@ -174,6 +182,7 @@
   </script>
 </body>
 </html>
+
 
 
 
