@@ -141,11 +141,18 @@
       let angleDeg = angleRad * (180 / Math.PI);
 
       if (angleDeg < 0) angleDeg += 180;
-      if (angleDeg > 90) angleDeg = 180 - angleDeg;
+      if (Tx > Cx) {
 
+        if (angleDeg > 90) angleDeg = 180 - angleDeg;
+      } else {
+   
+        angleDeg = 180 - angleDeg;
+        if (angleDeg > 90) angleDeg = 180 - angleDeg;
+        }
       result.textContent = `CVA = ${angleDeg.toFixed(2)}°`;
     }
   </script>
 </body>
 </html>
+
 
