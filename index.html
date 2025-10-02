@@ -30,6 +30,8 @@ button:hover { background:#004d40; }
 canvas { border:2px dashed #bdbdbd; border-radius:10px; margin-top:15px; max-width:100%; }
 video { margin-top:10px; max-width:100%; border-radius:10px; }
 #result { margin-top:15px; font-size:18px; font-weight:bold; color:#d81b60; text-align:center; }
+#historyBox { margin-top:20px; font-size:16px; color:#444; text-align:left; }
+hr { border:none; border-top:1px solid #ccc; margin:10px 0; }
 </style>
 </head>
 <body>
@@ -71,6 +73,7 @@ video { margin-top:10px; max-width:100%; border-radius:10px; }
 
   <canvas id="canvas"></canvas>
   <div id="result">Upload or capture a photo to start</div>
+  <div id="historyBox"></div>
   <br>
   <button class="btn" onclick="goBack()">⬅ Back to Instructions</button>
 </div>
@@ -87,9 +90,11 @@ const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const result=document.getElementById('result');
 const saveAttemptBtn=document.getElementById('saveAttemptBtn');
+const historyBox=document.getElementById('historyBox');
+
 let img=new Image();
-let currentAttempt=null; // current 2 points
-let savedAttempts=[];
+let currentAttempt=null; // temporary 2 points
+let savedAttempts=[];    // only saved attempts
 let attemptCount=0;
 const maxAttempts=3;
 
@@ -127,6 +132,8 @@ canvas.addEventListener('click', e=>{
 
   if(currentAttempt.length===2){
     drawLine(currentAttempt[0],currentAttempt[1]);
+    const tempAngle=calculateCVA(currentAttempt[0],currentAttempt[1]);
+    result.innerHTML=`Current attempt: CVA = ${tempAngle}° <br>Click "Save Attempt" if satisfied.`;
     saveAttemptBtn.style.display='inline-block';
   }
 });
@@ -161,7 +168,9 @@ saveAttemptBtn.addEventListener('click', ()=>{
   currentAttempt=null;
   saveAttemptBtn.style.display='none';
   displayResults();
-  if(attemptCount>=maxAttempts) result.innerHTML+="<br>Maximum saved attempts reached. Reset points to start a new attempt.";
+  if(attemptCount>=maxAttempts){
+    result.innerHTML+="<br>Maximum saved attempts reached. Press 'Capture / Upload Again' to start a new set.";
+  }
 });
 
 // DISPLAY RESULTS
@@ -185,6 +194,11 @@ resetPointsBtn.addEventListener('click', ()=>{
 // RESET IMAGE
 const resetImageBtn=document.getElementById('resetImageBtn');
 resetImageBtn.addEventListener('click', ()=>{
+  if(savedAttempts.length>0){
+    let historyHTML = "<b>History:</b><br>";
+    savedAttempts.forEach((angle,i)=>{ historyHTML += `Attempt ${i+1}: CVA = ${angle}°<br>`; });
+    historyBox.innerHTML = historyHTML + "<hr>";
+  }
   ctx.clearRect(0,0,canvas.width,canvas.height);
   img=new Image();
   canvas.width=0;
@@ -247,4 +261,3 @@ closeCameraBtn.addEventListener('click', ()=>{
 </script>
 </body>
 </html>
-
