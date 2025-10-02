@@ -24,7 +24,7 @@
       max-width: 95%;
     }
 
-    h1, h2 {
+    h1, h2, h3 {
       margin-bottom: 15px;
       color: #00796b;
     }
@@ -59,6 +59,12 @@
       max-width: 100%;
     }
 
+    video {
+      margin-top: 10px;
+      max-width: 100%;
+      border-radius: 10px;
+    }
+
     #result {
       margin-top: 15px;
       font-size: 18px;
@@ -80,7 +86,7 @@
       <div id="reference">
         <h3>Instructions</h3>
         <p>
-          1. Upload a clear side-view photo.<br>
+          1. Upload a clear side-view photo or use your camera.<br>
           2. Click on the <b>tragus (ear)</b> first.<br>
           3. Then click on <b>C7 (neck base)</b>.<br>
           4. The system will calculate your CVA angle.
@@ -93,7 +99,17 @@
     <!-- MAIN APP -->
     <div id="mainApp" style="display:none;">
       <h2>POSTURA</h2>
-      <input type="file" id="upload" accept="image/*"><br><br>
+
+      <!-- IMAGE UPLOAD -->
+      <input type="file" id="upload" accept="image/*"><br>
+
+      <!-- CAMERA FEED -->
+      <h3>Or take a photo directly:</h3>
+      <video id="camera" autoplay playsinline></video>
+      <br>
+      <button id="snapBtn" class="btn">Capture Photo</button>
+      <br><br>
+
       <button id="resetBtn" class="btn">Reset Points</button>
       <br>
       <canvas id="canvas"></canvas>
@@ -110,12 +126,13 @@
       document.getElementById("frontPage").style.display = "none";
       document.getElementById("mainApp").style.display = "block";
     }
+
     function goBack() {
       document.getElementById("mainApp").style.display = "none";
       document.getElementById("frontPage").style.display = "block";
     }
 
-    // ===== CVA Script =====
+    // ===== CVA SCRIPT =====
     const upload = document.getElementById('upload');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -124,6 +141,7 @@
     let img = new Image();
     let points = [];
 
+    // IMAGE UPLOAD
     upload.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -141,8 +159,9 @@
       reader.readAsDataURL(file);
     });
 
+    // CANVAS CLICK TO MARK POINTS
     canvas.addEventListener('click', (e) => {
-      if (!img.src) return;
+      if (!canvas.width) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -158,10 +177,11 @@
       }
     });
 
+    // RESET
     resetBtn.addEventListener('click', () => {
-      if (!img.src) return;
+      if (!canvas.width) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      if (img.src) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       points = [];
       result.textContent = "Click 2 points: (1) Tragus, (2) C7";
     });
@@ -187,6 +207,28 @@
       }
       result.textContent = `CVA = ${angleDeg.toFixed(2)}°`;
     }
+
+    // ===== CAMERA SCRIPT =====
+    const video = document.getElementById('camera');
+    const snapBtn = document.getElementById('snapBtn');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error("Camera access denied:", err);
+        alert("Camera not available or permission denied.");
+      });
+
+    snapBtn.addEventListener('click', () => {
+      if (!video.videoWidth) return;
+      canvas.width = video.videoWidth * 0.6;
+      canvas.height = video.videoHeight * 0.6;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      points = [];
+      result.textContent = "Click 2 points: (1) Tragus, (2) C7";
+    });
   </script>
 </body>
 </html>
