@@ -217,11 +217,11 @@ async function segmentPerson(imgElement){
   result.innerHTML="Click 2 points: (1) Tragus, (2) C7";
 }
 
-// CALCULATE CVA
-function calculateCVA(p1,p2){
-  let dx=p1.x-p2.x, dy=p1.y-p2.y;
-  let angle=Math.atan2(dy,dx)*(180/Math.PI);
-  if(angle<0) angle+=180;
+// ✅ CORRECT CVA CALCULATION
+function calculateCVA(pTragus, pC7) {
+  let dx = pTragus.x - pC7.x;
+  let dy = pC7.y - pTragus.y; // vertical reference
+  let angle = Math.atan2(dx, dy) * (180 / Math.PI); // angle from vertical
   return Number(angle.toFixed(2));
 }
 
@@ -342,5 +342,3 @@ clearHistoryBtn.addEventListener('click', ()=>{ historyBox.innerHTML=''; });
 </script>
 </body>
 </html>
-
-
