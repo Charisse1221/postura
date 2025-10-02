@@ -102,10 +102,24 @@ const saveAttemptBtn=document.getElementById('saveAttemptBtn');
 const historyBox=document.getElementById('historyBox');
 
 let img=new Image();
-let currentAttempt=null; // temporary 2 points
-let savedAttempts=[];    // only saved attempts
+let currentAttempt=null; 
+let savedAttempts=[];    
 let attemptCount=0;
 const maxAttempts=3;
+
+// Define person bounding box (adjust values to your reference image size)
+const personBounds={xMin:50,xMax:550,yMin:40,yMax:420};
+
+// Draw guides (always visible)
+function drawGuides(){
+  ctx.strokeStyle="rgba(0,200,0,0.6)";
+  ctx.lineWidth=2;
+  ctx.setLineDash([6,4]);
+  ctx.strokeRect(personBounds.xMin,personBounds.yMin,
+    personBounds.xMax-personBounds.xMin,
+    personBounds.yMax-personBounds.yMin);
+  ctx.setLineDash([]);
+}
 
 // IMAGE UPLOAD
 upload.addEventListener('change', e=>{
@@ -117,31 +131,13 @@ upload.addEventListener('change', e=>{
       canvas.width=img.width*0.6;
       canvas.height=img.height*0.6;
       ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      drawGuides();
       resetAttemptData();
     };
     img.src=ev.target.result;
   };
   reader.readAsDataURL(file);
 });
-
-// === VALIDATION FUNCTION ===
-function validateLandmarks(p1, p2) {
-  const distance = Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2);
-  const angle = calculateCVA(p1, p2);
-
-  if (distance < 30) {
-    alert("Points are too close. Please re-click correctly.");
-    return false;
-  }
-  if (distance > 500) {
-    alert("Points are too far apart. Please re-check placement.");
-    return false;
-  }
-  if (angle < 20 || angle > 80) {
-    return confirm(`Unusual CVA detected (${angle}°). Do you want to keep this?`);
-  }
-  return true;
-}
 
 // CANVAS CLICK
 canvas.addEventListener('click', e=>{
@@ -150,6 +146,12 @@ canvas.addEventListener('click', e=>{
   const x=e.clientX-rect.left;
   const y=e.clientY-rect.top;
 
+  // Check if inside person bounds
+  if(x<personBounds.xMin||x>personBounds.xMax||y<personBounds.yMin||y>personBounds.yMax){
+    alert("Please click within the person area (inside the green box).");
+    return;
+  }
+
   if(!currentAttempt) currentAttempt=[];
   currentAttempt.push({x,y});
 
@@ -157,15 +159,9 @@ canvas.addEventListener('click', e=>{
   ctx.beginPath();
   ctx.arc(x,y,5,0,Math.PI*2);
   ctx.fill();
+  drawGuides();
 
   if(currentAttempt.length===2){
-    // Check if points are valid
-    if (!validateLandmarks(currentAttempt[0], currentAttempt[1])) {
-      currentAttempt=null;
-      resetPointsBtn.click();
-      return;
-    }
-
     drawLine(currentAttempt[0],currentAttempt[1]);
     const tempAngle=calculateCVA(currentAttempt[0],currentAttempt[1]);
     result.innerHTML=`Current attempt: CVA = ${tempAngle}° <br>Click "Save Attempt" if satisfied.`;
@@ -180,6 +176,7 @@ function drawLine(p1,p2){
   ctx.moveTo(p1.x,p1.y);
   ctx.lineTo(p2.x,p2.y);
   ctx.stroke();
+  drawGuides();
 }
 
 // CALCULATE CVA
@@ -215,12 +212,13 @@ function displayResults(){
   result.innerHTML=html;
 }
 
-// RESET POINTS (current unsaved attempt)
+// RESET POINTS
 const resetPointsBtn=document.getElementById('resetPointsBtn');
 resetPointsBtn.addEventListener('click', ()=>{
   if(!canvas.width) return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(img.src) ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  drawGuides();
   currentAttempt=null;
   saveAttemptBtn.style.display='none';
   displayResults();
@@ -235,7 +233,7 @@ resetImageBtn.addEventListener('click', ()=>{
     let cardHTML = "<b>Previous Image Attempts:</b><br>";
     savedAttempts.forEach((angle,i)=>{ cardHTML += `Attempt ${i+1}: CVA = ${angle}°<br>`; });
     card.innerHTML = cardHTML;
-    historyBox.prepend(card); // add new card at top
+    historyBox.prepend(card);
   }
   ctx.clearRect(0,0,canvas.width,canvas.height);
   img=new Image();
@@ -249,6 +247,7 @@ resetImageBtn.addEventListener('click', ()=>{
   result.innerHTML="Upload or capture a new photo";
 });
 
+// Reset attempt
 function resetAttemptData(){
   currentAttempt=null;
   savedAttempts=[];
@@ -280,6 +279,7 @@ snapBtn.addEventListener('click', ()=>{
   canvas.width=video.videoWidth*0.6;
   canvas.height=video.videoHeight*0.6;
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  drawGuides();
   img.src=canvas.toDataURL();
   resetAttemptData();
   video.style.display='none';
