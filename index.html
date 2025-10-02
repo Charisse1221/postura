@@ -9,9 +9,10 @@ body {
   background: linear-gradient(135deg, #e0f7fa, #fce4ec);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   margin: 0;
+  padding: 20px;
 }
 .container {
   background: #fff;
@@ -19,7 +20,7 @@ body {
   border-radius: 15px;
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   text-align: center;
-  width: 600px;
+  width: 650px;
   max-width: 95%;
 }
 h1,h2,h3 { margin-bottom:15px; color:#00796b; }
@@ -30,7 +31,15 @@ button:hover { background:#004d40; }
 canvas { border:2px dashed #bdbdbd; border-radius:10px; margin-top:15px; max-width:100%; }
 video { margin-top:10px; max-width:100%; border-radius:10px; }
 #result { margin-top:15px; font-size:18px; font-weight:bold; color:#d81b60; text-align:center; }
-#historyBox { margin-top:20px; font-size:16px; color:#444; text-align:left; }
+#historyBox { margin-top:20px; text-align:left; }
+.historyCard {
+  background:#f0f4f4;
+  border-radius:10px;
+  padding:10px 15px;
+  margin-bottom:10px;
+  box-shadow:0 4px 8px rgba(0,0,0,0.05);
+}
+.historyCard b { color:#00796b; }
 hr { border:none; border-top:1px solid #ccc; margin:10px 0; }
 </style>
 </head>
@@ -195,9 +204,12 @@ resetPointsBtn.addEventListener('click', ()=>{
 const resetImageBtn=document.getElementById('resetImageBtn');
 resetImageBtn.addEventListener('click', ()=>{
   if(savedAttempts.length>0){
-    let historyHTML = "<b>History:</b><br>";
-    savedAttempts.forEach((angle,i)=>{ historyHTML += `Attempt ${i+1}: CVA = ${angle}°<br>`; });
-    historyBox.innerHTML = historyHTML + "<hr>";
+    const card=document.createElement('div');
+    card.className="historyCard";
+    let cardHTML = "<b>Previous Image Attempts:</b><br>";
+    savedAttempts.forEach((angle,i)=>{ cardHTML += `Attempt ${i+1}: CVA = ${angle}°<br>`; });
+    card.innerHTML = cardHTML;
+    historyBox.prepend(card); // add new card at top
   }
   ctx.clearRect(0,0,canvas.width,canvas.height);
   img=new Image();
@@ -261,3 +273,4 @@ closeCameraBtn.addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
