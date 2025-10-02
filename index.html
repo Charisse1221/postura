@@ -38,8 +38,8 @@ video { margin-top:10px; max-width:100%; border-radius:10px; }
   margin-bottom:10px;
   box-shadow:0 4px 8px rgba(0,0,0,0.05);
 }
-.processing { color:#ff9800; font-weight:bold; }
-.warning { color:#e53935; font-weight:bold; }
+.processing { color:#ff9800; font-weight:bold; text-align:center; }
+.warning { color:#e53935; font-weight:bold; text-align:center; }
 </style>
 </head>
 <body>
@@ -128,7 +128,6 @@ function drawCanvas(){
   if(!img.src) return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.drawImage(img,0,0,canvas.width,canvas.height);
-  // redraw saved attempts
   savedAttempts.forEach((obj,i)=>{
     if(obj.points){
       ctx.strokeStyle=attemptColors[i];
@@ -217,7 +216,7 @@ async function segmentPerson(imgElement){
   result.innerHTML="Click 2 points: (1) Tragus, (2) C7";
 }
 
-// ✅ CORRECT CVA CALCULATION
+// CVA CALCULATION
 function calculateCVA(p1,p2){
   const Tx=p1.x,Ty=p1.y;
   const Cx=p2.x,Cy=p2.y;
@@ -228,7 +227,6 @@ function calculateCVA(p1,p2){
   else{ angleDeg=180-angleDeg; if(angleDeg>90) angleDeg=180-angleDeg; }
   return angleDeg.toFixed(2);
 }
-
 
 // DRAW LINE
 function drawLine(p1,p2,color='blue'){
@@ -280,7 +278,7 @@ canvas.addEventListener('click', e=>{
 saveAttemptBtn.addEventListener('click', ()=>{
   if(!currentAttempt || currentAttempt.length<2 || attemptCount>=maxAttempts) return;
   const angle=calculateCVA(currentAttempt[0],currentAttempt[1]);
-  savedAttempts.push({angle,points:[...currentAttempt]});
+  savedAttempts.push({angle:parseFloat(angle),points:[...currentAttempt]});
   attemptCount++;
   currentAttempt=null;
   saveAttemptBtn.style.display='none';
@@ -293,13 +291,14 @@ saveAttemptBtn.addEventListener('click', ()=>{
 function displayResults(){
   let html="";
   savedAttempts.forEach((obj,i)=>{ html+=`Attempt ${i+1}: CVA = ${obj.angle}°<br>`; });
-  result.innerHTML=html;
+  result.innerHTML=html || "Click 2 points: (1) Tragus, (2) C7";
 }
 
 // DISPLAY AVERAGE + POSTURE
 function displayAverage(){
-  const sum=savedAttempts.reduce((acc,obj)=>acc+obj.angle,0);
-  const avg=(sum/savedAttempts.length).toFixed(2);
+  if(savedAttempts.length===0) return;
+  const sum = savedAttempts.reduce((acc,obj)=>acc+obj.angle,0);
+  const avg = (sum/savedAttempts.length).toFixed(2);
   let label="", color="", recommendation="";
   if(avg>=55){ label="Good posture"; color="green"; recommendation="Maintain your posture."; }
   else if(avg>=45){ label="At risk"; color="orange"; recommendation="Try to correct forward head posture."; }
@@ -318,7 +317,8 @@ resetPointsBtn.addEventListener('click', ()=>{
 // RESET IMAGE & SAVE HISTORY
 resetImageBtn.addEventListener('click', ()=>{
   if(savedAttempts.length>0){
-    const avgCVA=savedAttempts.reduce((acc,obj)=>acc+obj.angle,0)/savedAttempts.length;
+    const sum = savedAttempts.reduce((acc,obj)=>acc+obj.angle,0);
+    const avgCVA = (sum/savedAttempts.length).toFixed(2);
     let label="", color="", recommendation="";
     if(avgCVA>=55){ label="Good posture"; color="green"; recommendation="Maintain your posture."; }
     else if(avgCVA>=45){ label="At risk"; color="orange"; recommendation="Try to correct forward head posture."; }
@@ -329,12 +329,13 @@ resetImageBtn.addEventListener('click', ()=>{
     card.style.background=color==='green'?'#e8f5e9':color==='orange'?'#fff3e0':'#ffebee';
     let cardHTML="<b>Previous Image Attempts:</b><br>";
     savedAttempts.forEach((obj,i)=>{ cardHTML+=`Attempt ${i+1}: CVA = ${obj.angle}°<br>`; });
-    cardHTML+=`<hr><b>Average CVA:</b> ${avgCVA.toFixed(2)}°<br>`;
+    cardHTML+=`<hr><b>Average CVA:</b> ${avgCVA}°<br>`;
     cardHTML+=`<b>Posture:</b> <span style="color:${color}">${label}</span><br>`;
     cardHTML+=`<b>Recommendation:</b> ${recommendation}<br>`;
     card.innerHTML=cardHTML;
     historyBox.prepend(card);
   }
+
   ctx.clearRect(0,0,canvas.width,canvas.height);
   img=new Image(); canvas.width=0; canvas.height=0;
   currentAttempt=null; savedAttempts=[]; attemptCount=0; upload.value='';
@@ -347,5 +348,3 @@ clearHistoryBtn.addEventListener('click', ()=>{ historyBox.innerHTML=''; });
 </script>
 </body>
 </html>
-
-
