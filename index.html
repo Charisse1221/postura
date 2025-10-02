@@ -1,85 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>POSTURA</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg, #e0f7fa, #fce4ec);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: #fff;
-      padding: 20px 30px;
-      border-radius: 15px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 600px;
-      max-width: 95%;
-    }
-    h1,h2,h3 { margin-bottom:15px; color:#00796b; }
-    input[type="file"], button {
-      margin:10px 5px;
-      padding:10px 15px;
-      border:none;
-      border-radius:8px;
-      font-size:14px;
-      cursor:pointer;
-    }
-    input[type="file"] { background:#e0f2f1; }
-    button { background:#00796b; color:#fff; transition:0.3s; }
-    button:hover { background:#004d40; }
-    canvas { border:2px dashed #bdbdbd; border-radius:10px; margin-top:15px; max-width:100%; }
-    video { margin-top:10px; max-width:100%; border-radius:10px; }
-    #result { margin-top:15px; font-size:18px; font-weight:bold; color:#d81b60; text-align:left; }
-  </style>
+<meta charset="UTF-8">
+<title>POSTURA</title>
+<style>
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #e0f7fa, #fce4ec);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+.container {
+  background: #fff;
+  padding: 20px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  text-align: center;
+  width: 600px;
+  max-width: 95%;
+}
+h1,h2,h3 { margin-bottom:15px; color:#00796b; }
+input[type="file"], button { margin:10px 5px; padding:10px 15px; border:none; border-radius:8px; font-size:14px; cursor:pointer; }
+input[type="file"] { background:#e0f2f1; }
+button { background:#00796b; color:#fff; transition:0.3s; }
+button:hover { background:#004d40; }
+canvas { border:2px dashed #bdbdbd; border-radius:10px; margin-top:15px; max-width:100%; }
+video { margin-top:10px; max-width:100%; border-radius:10px; }
+#result { margin-top:15px; font-size:18px; font-weight:bold; color:#d81b60; text-align:left; }
+</style>
 </head>
 <body>
 <div class="container">
 
-  <!-- FRONT PAGE -->
-  <div id="frontPage">
-    <h1>POSTURA</h1>
-    <p>Welcome to <b>POSTURA</b> — a tool to help you measure <b>Cervical Vertebral Angle (CVA)</b>.</p>
-    <div id="reference">
-      <h3>Instructions</h3>
-      <p>1. Upload a clear side-view photo or use your camera.<br>
-         2. Click on the <b>tragus (ear)</b> first.<br>
-         3. Then click on <b>C7 (neck base)</b>.<br>
-         4. The system calculates your CVA angle for up to 3 attempts.</p>
-      <img src="tragus.jpg" alt="Reference points" width="300">
-    </div>
-    <button class="btn" onclick="startApp()">Start</button>
+<!-- FRONT PAGE -->
+<div id="frontPage">
+  <h1>POSTURA</h1>
+  <p>Welcome to <b>POSTURA</b> — a tool to measure <b>Cervical Vertebral Angle (CVA)</b>.</p>
+  <div id="reference">
+    <h3>Instructions</h3>
+    <p>1. Upload a side-view photo or use your camera.<br>
+       2. Click on the <b>tragus (ear)</b> first.<br>
+       3. Then click on <b>C7 (neck base)</b>.<br>
+       4. Save each attempt to record results (up to 3 attempts).</p>
+    <img src="tragus.jpg" alt="Reference points" width="300">
   </div>
+  <button class="btn" onclick="startApp()">Start</button>
+</div>
 
-  <!-- MAIN APP -->
-  <div id="mainApp" style="display:none;">
-    <h2>POSTURA</h2>
-    <input type="file" id="upload" accept="image/*"><br>
+<!-- MAIN APP -->
+<div id="mainApp" style="display:none;">
+  <h2>POSTURA</h2>
+  <input type="file" id="upload" accept="image/*"><br>
 
-    <h3>Or use your camera:</h3>
-    <button id="openCameraBtn" class="btn">Open Camera</button>
-    <button id="closeCameraBtn" class="btn" style="display:none;">Close Camera</button>
-    <br>
-    <video id="camera" autoplay playsinline style="display:none; border:2px solid #bdbdbd; border-radius:10px;"></video>
-    <br>
-    <button id="snapBtn" class="btn" style="display:none;">Capture Photo</button>
-    <br><br>
+  <h3>Or use your camera:</h3>
+  <button id="openCameraBtn" class="btn">Open Camera</button>
+  <button id="closeCameraBtn" class="btn" style="display:none;">Close Camera</button>
+  <br>
+  <video id="camera" autoplay playsinline style="display:none; border:2px solid #bdbdbd; border-radius:10px;"></video>
+  <br>
+  <button id="snapBtn" class="btn" style="display:none;">Capture Photo</button>
+  <br><br>
 
-    <button id="resetPointsBtn" class="btn">Reset Points</button>
-    <button id="resetImageBtn" class="btn">Capture / Upload Again</button>
-    <br>
+  <button id="resetPointsBtn" class="btn">Reset Points</button>
+  <button id="resetImageBtn" class="btn">Capture / Upload Again</button>
+  <button id="saveAttemptBtn" class="btn" style="display:none;">Save Attempt</button>
+  <br>
 
-    <canvas id="canvas"></canvas>
-    <div id="result">Upload or capture a photo to start</div>
-    <br>
-    <button class="btn" onclick="goBack()">⬅ Back to Instructions</button>
-  </div>
+  <canvas id="canvas"></canvas>
+  <div id="result">Upload or capture a photo to start</div>
+  <br>
+  <button class="btn" onclick="goBack()">⬅ Back to Instructions</button>
+</div>
 
 </div>
 
@@ -92,9 +86,10 @@ const upload=document.getElementById('upload');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const result=document.getElementById('result');
+const saveAttemptBtn=document.getElementById('saveAttemptBtn');
 let img=new Image();
-let points=[];
-let attemptResults=[];
+let currentAttempt=null; // current 2 points
+let savedAttempts=[];
 let attemptCount=0;
 const maxAttempts=3;
 
@@ -108,10 +103,7 @@ upload.addEventListener('change', e=>{
       canvas.width=img.width*0.6;
       canvas.height=img.height*0.6;
       ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      points=[];
-      attemptResults=[];
-      attemptCount=0;
-      result.innerHTML="Click 2 points: (1) Tragus, (2) C7";
+      resetAttemptData();
     };
     img.src=ev.target.result;
   };
@@ -120,29 +112,26 @@ upload.addEventListener('change', e=>{
 
 // CANVAS CLICK
 canvas.addEventListener('click', e=>{
-  if(!canvas.width || points.length>=2) return;
+  if(!canvas.width || currentAttempt && currentAttempt.length>=2 || attemptCount>=maxAttempts) return;
   const rect=canvas.getBoundingClientRect();
   const x=e.clientX-rect.left;
   const y=e.clientY-rect.top;
-  points.push({x,y});
+
+  if(!currentAttempt) currentAttempt=[];
+  currentAttempt.push({x,y});
+
   ctx.fillStyle="red";
   ctx.beginPath();
   ctx.arc(x,y,5,0,Math.PI*2);
   ctx.fill();
 
-  if(points.length===2){
-    const angle=calculateCVA(points[0],points[1]);
-    attemptResults.push(angle);
-    attemptCount++;
-    drawLine(points[0],points[1]);
-    displayResults();
-    points=[];
-    if(attemptCount>=maxAttempts){
-      result.innerHTML+="<br>Maximum attempts reached. Reset points to try again.";
-    }
+  if(currentAttempt.length===2){
+    drawLine(currentAttempt[0],currentAttempt[1]);
+    saveAttemptBtn.style.display='inline-block';
   }
 });
 
+// DRAW LINE
 function drawLine(p1,p2){
   ctx.strokeStyle="blue";
   ctx.beginPath();
@@ -151,6 +140,7 @@ function drawLine(p1,p2){
   ctx.stroke();
 }
 
+// CALCULATE CVA
 function calculateCVA(p1,p2){
   const Tx=p1.x,Ty=p1.y;
   const Cx=p2.x,Cy=p2.y;
@@ -162,19 +152,33 @@ function calculateCVA(p1,p2){
   return angleDeg.toFixed(2);
 }
 
+// SAVE ATTEMPT
+saveAttemptBtn.addEventListener('click', ()=>{
+  if(!currentAttempt || currentAttempt.length<2 || attemptCount>=maxAttempts) return;
+  const angle=calculateCVA(currentAttempt[0],currentAttempt[1]);
+  savedAttempts.push(angle);
+  attemptCount++;
+  currentAttempt=null;
+  saveAttemptBtn.style.display='none';
+  displayResults();
+  if(attemptCount>=maxAttempts) result.innerHTML+="<br>Maximum saved attempts reached. Reset points to start a new attempt.";
+});
+
+// DISPLAY RESULTS
 function displayResults(){
   let html="";
-  attemptResults.forEach((angle,i)=>{ html+=`Attempt ${i+1}: CVA = ${angle}°<br>`; });
+  savedAttempts.forEach((angle,i)=>{ html+=`Attempt ${i+1}: CVA = ${angle}°<br>`; });
   result.innerHTML=html;
 }
 
-// RESET POINTS
+// RESET POINTS (current unsaved attempt)
 const resetPointsBtn=document.getElementById('resetPointsBtn');
 resetPointsBtn.addEventListener('click', ()=>{
   if(!canvas.width) return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(img.src) ctx.drawImage(img,0,0,canvas.width,canvas.height);
-  points=[];
+  currentAttempt=null;
+  saveAttemptBtn.style.display='none';
   displayResults();
 });
 
@@ -182,15 +186,24 @@ resetPointsBtn.addEventListener('click', ()=>{
 const resetImageBtn=document.getElementById('resetImageBtn');
 resetImageBtn.addEventListener('click', ()=>{
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  points=[];
-  attemptResults=[];
-  attemptCount=0;
   img=new Image();
   canvas.width=0;
   canvas.height=0;
+  currentAttempt=null;
+  savedAttempts=[];
+  attemptCount=0;
   upload.value='';
+  saveAttemptBtn.style.display='none';
   result.innerHTML="Upload or capture a new photo";
 });
+
+function resetAttemptData(){
+  currentAttempt=null;
+  savedAttempts=[];
+  attemptCount=0;
+  saveAttemptBtn.style.display='none';
+  result.innerHTML="Click 2 points: (1) Tragus, (2) C7";
+}
 
 // CAMERA
 const openCameraBtn=document.getElementById('openCameraBtn');
@@ -207,10 +220,7 @@ openCameraBtn.addEventListener('click', async ()=>{
     snapBtn.style.display='inline-block';
     closeCameraBtn.style.display='inline-block';
     openCameraBtn.style.display='none';
-  }catch(err){
-    console.error("Camera denied:",err);
-    alert("Camera not available or permission denied.");
-  }
+  }catch(err){console.error(err); alert("Camera not available or permission denied.");}
 });
 
 snapBtn.addEventListener('click', ()=>{
@@ -218,11 +228,8 @@ snapBtn.addEventListener('click', ()=>{
   canvas.width=video.videoWidth*0.6;
   canvas.height=video.videoHeight*0.6;
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
-  img.src=canvas.toDataURL(); // Save captured image
-  points=[];
-  attemptResults=[];
-  attemptCount=0;
-  result.innerHTML="Click 2 points: (1) Tragus, (2) C7";
+  img.src=canvas.toDataURL();
+  resetAttemptData();
   video.style.display='none';
   snapBtn.style.display='none';
   closeCameraBtn.style.display='none';
