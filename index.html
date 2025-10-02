@@ -1,334 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>POSTURA</title>
-<style>
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: linear-gradient(135deg, #e0f7fa, #fce4ec);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  margin: 0;
-  padding: 20px;
-}
-.container {
-  background: #fff;
-  padding: 20px 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  text-align: center;
-  width: 650px;
-  max-width: 95%;
-}
-h1,h2,h3 { margin-bottom:15px; color:#00796b; }
-input[type="file"], button { margin:10px 5px; padding:10px 15px; border:none; border-radius:8px; font-size:14px; cursor:pointer; }
-input[type="file"] { background:#e0f2f1; }
-button { background:#00796b; color:#fff; transition:0.3s; }
-button:hover { background:#004d40; }
-canvas { border:2px dashed #bdbdbd; border-radius:10px; margin-top:15px; max-width:100%; }
-video { margin-top:10px; max-width:100%; border-radius:10px; }
-#result { margin-top:15px; font-size:18px; font-weight:bold; color:#d81b60; text-align:center; }
-#historyBox { margin-top:20px; text-align:left; }
-.historyCard {
-  background:#f0f4f4;
-  border-radius:10px;
-  padding:10px 15px;
-  margin-bottom:10px;
-  box-shadow:0 4px 8px rgba(0,0,0,0.05);
-}
-.historyCard b { color:#00796b; }
-hr { border:none; border-top:1px solid #ccc; margin:10px 0; }
-.processing { color:#ff9800; font-weight:bold; }
-.warning { color:#e53935; font-weight:bold; }
-</style>
+  <meta charset="UTF-8">
+  <title>POSTURA</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #fce4ec);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      text-align: center;
+      width: 90%;
+      max-width: 600px;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    canvas {
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      margin-top: 15px;
+      max-width: 100%;
+    }
+    input, button {
+      margin: 10px 5px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    input[type="file"] {
+      background: #f1f1f1;
+    }
+    button {
+      background: #00796b;
+      color: white;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #004d40;
+    }
+    #result, #finalResult {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+    #warning {
+      margin-top: 10px;
+      color: red;
+      font-weight: bold;
+    }
+    #processing {
+      margin-top: 10px;
+      color: #ff9800;
+      font-weight: bold;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-
-<!-- FRONT PAGE -->
-<div id="frontPage">
-  <h1>POSTURA</h1>
-  <p>Welcome to <b>POSTURA</b> — a tool to measure <b>Cervical Vertebral Angle (CVA)</b>.</p>
-  <div id="reference">
-    <h3>Instructions</h3>
-    <p>1. Upload a side-view photo or use your camera.<br>
-       2. Click on the <b>tragus (ear)</b> first.<br>
-       3. Then click on <b>C7 (neck base)</b>.<br>
-       4. Save each attempt to record results (up to 3 attempts).</p>
-    <img src="tragus.jpg" alt="Reference points" width="300">
+  <div class="container">
+    <h1>POSTURA</h1>
+    <input type="file" id="upload" accept="image/*">
+    <button id="reset">Reset</button>
+    <canvas id="canvas"></canvas>
+    <div id="processing">Processing… Please wait</div>
+    <div id="result"></div>
+    <div id="warning"></div>
+    <button id="saveAttempt" disabled>Save Attempt</button>
+    <div id="attempts"></div>
+    <div id="finalResult"></div>
   </div>
-  <button class="btn" onclick="startApp()">Start</button>
-</div>
 
-<!-- MAIN APP -->
-<div id="mainApp" style="display:none;">
-  <h2>POSTURA</h2>
-  <input type="file" id="upload" accept="image/*"><br>
+  <script>
+    const upload = document.getElementById('upload');
+    const reset = document.getElementById('reset');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const result = document.getElementById('result');
+    const warning = document.getElementById('warning');
+    const processing = document.getElementById('processing');
+    const saveAttempt = document.getElementById('saveAttempt');
+    const attemptsDiv = document.getElementById('attempts');
+    const finalResult = document.getElementById('finalResult');
 
-  <h3>Or use your camera:</h3>
-  <button id="openCameraBtn" class="btn">Open Camera</button>
-  <button id="closeCameraBtn" class="btn" style="display:none;">Close Camera</button>
-  <br>
-  <video id="camera" autoplay playsinline style="display:none; border:2px solid #bdbdbd; border-radius:10px;"></video>
-  <br>
-  <button id="snapBtn" class="btn" style="display:none;">Capture Photo</button>
-  <br><br>
+    let img = new Image();
+    let points = [];
+    let personBox = null;
+    let currentCVA = null;
+    let attempts = [];
 
-  <button id="resetPointsBtn" class="btn">Reset Points</button>
-  <button id="resetImageBtn" class="btn">Capture / Upload Again</button>
-  <button id="saveAttemptBtn" class="btn" style="display:none;">Save Attempt</button>
-  <br>
+    // Reset
+    reset.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      points = [];
+      result.textContent = '';
+      warning.textContent = '';
+      personBox = null;
+      currentCVA = null;
+      saveAttempt.disabled = true;
+    });
 
-  <canvas id="canvas"></canvas>
-  <div id="result">Upload or capture a photo to start</div>
-  <div id="historyBox"></div>
-  <br>
-  <button class="btn" onclick="goBack()">⬅ Back to Instructions</button>
-</div>
+    // Upload
+    upload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
 
-</div>
+          // Simulate detection (placeholder box)
+          processing.style.display = "block";
+          setTimeout(() => {
+            processing.style.display = "none";
+            personBox = {x: img.width*0.2, y: img.height*0.1, w: img.width*0.6, h: img.height*0.8};
+            ctx.fillStyle = "rgba(0, 150, 255, 0.1)";
+            ctx.fillRect(personBox.x, personBox.y, personBox.w, personBox.h);
+            ctx.strokeStyle = "rgba(0, 150, 255, 0.5)";
+            ctx.strokeRect(personBox.x, personBox.y, personBox.w, personBox.h);
+          }, 1200);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
 
-<!-- TensorFlow + BodyPix -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0"></script>
+    // Landmark clicks
+    canvas.addEventListener('click', (e) => {
+      if (!personBox) return alert("Please wait until processing is done.");
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-<script>
-function startApp(){document.getElementById("frontPage").style.display="none";document.getElementById("mainApp").style.display="block";}
-function goBack(){document.getElementById("mainApp").style.display="none";document.getElementById("frontPage").style.display="block";}
-
-// CVA SCRIPT
-const upload=document.getElementById('upload');
-const canvas=document.getElementById('canvas');
-const ctx=canvas.getContext('2d');
-const result=document.getElementById('result');
-const saveAttemptBtn=document.getElementById('saveAttemptBtn');
-const historyBox=document.getElementById('historyBox');
-
-let img=new Image();
-let currentAttempt=null;
-let savedAttempts=[];
-let attemptCount=0;
-const maxAttempts=3;
-
-let net=null; // BodyPix model
-let segmentationMask=null;
-
-// Load BodyPix
-bodyPix.load().then(model=>{ net=model; console.log("✅ BodyPix model loaded"); });
-
-// IMAGE UPLOAD
-upload.addEventListener('change', e=>{
-  const file=e.target.files[0];
-  if(!file) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    img.onload=async ()=>{
-      canvas.width=img.width*0.6;
-      canvas.height=img.height*0.6;
-      ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      resetAttemptData();
-      if(net){
-        result.innerHTML="<span class='processing'>Processing person detection...</span>";
-        await segmentPerson(img);
+      // Ensure clicks inside person box
+      if (x < personBox.x || x > personBox.x+personBox.w || y < personBox.y || y > personBox.y+personBox.h) {
+        warning.textContent = "⚠️ Please click only on the person!";
+        return;
       }
-    };
-    img.src=ev.target.result;
-  };
-  reader.readAsDataURL(file);
-});
 
-// PERSON SEGMENTATION + faint highlight
-async function segmentPerson(imgElement){
-  const segmentation = await net.segmentPerson(imgElement);
-  segmentationMask = segmentation.data;
+      points.push({x, y});
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI*2);
+      ctx.fill();
 
-  const mask = bodyPix.toMask(
-    segmentation,
-    { r: 0, g: 255, b: 0, a: 80 },
-    { r: 0, g: 0, b: 0, a: 0 }
-  );
+      if (points.length === 2) {
+        calculateCVA();
+      }
+    });
 
-  bodyPix.drawMask(canvas, imgElement, mask, 0.3, 0, false);
-  result.innerHTML="Click 2 points: (1) Tragus, (2) C7";
-}
+    function calculateCVA() {
+      warning.textContent = "";
+      const [tragus, c7] = points;
 
-// CANVAS CLICK
-canvas.addEventListener('click', e=>{
-  if(!canvas.width || currentAttempt && currentAttempt.length>=2 || attemptCount>=maxAttempts) return;
-  const rect=canvas.getBoundingClientRect();
-  const x=e.clientX-rect.left;
-  const y=e.clientY-rect.top;
+      const dx = tragus.x - c7.x;
+      const dy = tragus.y - c7.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
 
-  // Error-checking: only allow clicks on person
-  if(segmentationMask){
-    const idx=(Math.floor(y)*canvas.width+Math.floor(x));
-    if(segmentationMask[idx]===0){
-      result.innerHTML="<span class='warning'>⚠️ Please click only on the person.</span>";
-      return;
+      if (dist < 30) {
+        warning.textContent = "⚠️ Landmarks too close!";
+        points = [];
+        return;
+      }
+      if (dist > canvas.width/1.2) {
+        warning.textContent = "⚠️ Landmarks too far apart!";
+        points = [];
+        return;
+      }
+
+      let angle = Math.atan2(dy, dx) * (180/Math.PI);
+      let cva = 90 - angle;
+
+      if (cva < 0 || cva > 90) {
+        warning.textContent = "⚠️ Implausible CVA angle detected!";
+        result.textContent = "";
+        points = [];
+        return;
+      }
+
+      currentCVA = cva;
+      saveAttempt.disabled = false;
+
+      // Classification
+      let classification = "";
+      let recommendation = "";
+      if (cva >= 55) {
+        classification = "Good";
+        recommendation = "Maintain your posture with regular breaks.";
+      } else if (cva >= 50) {
+        classification = "At Risk";
+        recommendation = "Do stretching exercises and check your ergonomics.";
+      } else {
+        classification = "Poor";
+        recommendation = "Consider posture correction exercises and workstation adjustments.";
+      }
+
+      result.textContent = `CVA: ${cva.toFixed(2)}° → ${classification} Posture\nRecommendation: ${recommendation}`;
     }
-  }
 
-  if(!currentAttempt) currentAttempt=[];
-  currentAttempt.push({x,y});
+    // Save attempt
+    saveAttempt.addEventListener('click', () => {
+      if (currentCVA !== null && attempts.length < 3) {
+        attempts.push(currentCVA);
+        attemptsDiv.textContent = `Attempts: ${attempts.map(a => a.toFixed(2)+"°").join(", ")}`;
+        points = [];
+        saveAttempt.disabled = true;
+        if (attempts.length === 3) {
+          calculateFinalAverage();
+        }
+      }
+    });
 
-  ctx.fillStyle="red";
-  ctx.beginPath();
-  ctx.arc(x,y,5,0,Math.PI*2);
-  ctx.fill();
-
-  if(currentAttempt.length===2){
-    const dist=Math.hypot(currentAttempt[0].x-currentAttempt[1].x,currentAttempt[0].y-currentAttempt[1].y);
-    if(dist<20 || dist>400){
-      result.innerHTML="<span class='warning'>⚠️ Landmarks seem too close or too far apart. Please try again.</span>";
-      currentAttempt=null;
-      return;
+    function calculateFinalAverage() {
+      const avg = attempts.reduce((a,b)=>a+b,0) / attempts.length;
+      let classification = "";
+      let recommendation = "";
+      if (avg >= 55) {
+        classification = "Good";
+        recommendation = "Maintain your posture with regular breaks.";
+      } else if (avg >= 50) {
+        classification = "At Risk";
+        recommendation = "Do stretching exercises and check your ergonomics.";
+      } else {
+        classification = "Poor";
+        recommendation = "Consider posture correction exercises and workstation adjustments.";
+      }
+      finalResult.textContent = `Final Average CVA: ${avg.toFixed(2)}° → ${classification} Posture\nFinal Recommendation: ${recommendation}`;
     }
-
-    drawLine(currentAttempt[0],currentAttempt[1]);
-    const tempAngle=calculateCVA(currentAttempt[0],currentAttempt[1]);
-
-    if(tempAngle<30 || tempAngle>75){
-      result.innerHTML=`<span class='warning'>⚠️ Unusual CVA angle detected (${tempAngle}°). Please recheck landmark placement.</span>`;
-    } else {
-      result.innerHTML=`Current attempt: CVA = ${tempAngle}° <br>Click "Save Attempt" if satisfied.`;
-    }
-    saveAttemptBtn.style.display='inline-block';
-  }
-});
-
-// DRAW LINE
-function drawLine(p1,p2){
-  ctx.strokeStyle="blue";
-  ctx.beginPath();
-  ctx.moveTo(p1.x,p1.y);
-  ctx.lineTo(p2.x,p2.y);
-  ctx.stroke();
-}
-
-// CALCULATE CVA
-function calculateCVA(p1,p2){
-  const Tx=p1.x,Ty=p1.y;
-  const Cx=p2.x,Cy=p2.y;
-  let angleRad=Math.atan2(Ty-Cy,Tx-Cx);
-  let angleDeg=angleRad*(180/Math.PI);
-  if(angleDeg<0) angleDeg+=180;
-  if(Tx>Cx){ if(angleDeg>90) angleDeg=180-angleDeg; }
-  else{ angleDeg=180-angleDeg; if(angleDeg>90) angleDeg=180-angleDeg; }
-  return angleDeg.toFixed(2);
-}
-
-// SAVE ATTEMPT
-saveAttemptBtn.addEventListener('click', ()=>{
-  if(!currentAttempt || currentAttempt.length<2 || attemptCount>=maxAttempts) return;
-  const angle=calculateCVA(currentAttempt[0],currentAttempt[1]);
-  savedAttempts.push(angle);
-  attemptCount++;
-  currentAttempt=null;
-  saveAttemptBtn.style.display='none';
-  displayResults();
-  if(attemptCount>=maxAttempts){
-    result.innerHTML+="<br>Maximum saved attempts reached. Press 'Capture / Upload Again' to start a new set.";
-  }
-});
-
-// DISPLAY RESULTS
-function displayResults(){
-  let html="";
-  savedAttempts.forEach((angle,i)=>{ html+=`Attempt ${i+1}: CVA = ${angle}°<br>`; });
-  result.innerHTML=html;
-}
-
-// RESET POINTS
-const resetPointsBtn=document.getElementById('resetPointsBtn');
-resetPointsBtn.addEventListener('click', ()=>{
-  if(!canvas.width) return;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(img.src){
-    ctx.drawImage(img,0,0,canvas.width,canvas.height);
-    if(segmentationMask) segmentPerson(img);
-  }
-  currentAttempt=null;
-  saveAttemptBtn.style.display='none';
-  displayResults();
-});
-
-// RESET IMAGE
-const resetImageBtn=document.getElementById('resetImageBtn');
-resetImageBtn.addEventListener('click', ()=>{
-  if(savedAttempts.length>0){
-    const card=document.createElement('div');
-    card.className="historyCard";
-    let cardHTML = "<b>Previous Image Attempts:</b><br>";
-    savedAttempts.forEach((angle,i)=>{ cardHTML += `Attempt ${i+1}: CVA = ${angle}°<br>`; });
-    card.innerHTML = cardHTML;
-    historyBox.prepend(card);
-  }
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  img=new Image();
-  canvas.width=0;
-  canvas.height=0;
-  currentAttempt=null;
-  savedAttempts=[];
-  attemptCount=0;
-  upload.value='';
-  saveAttemptBtn.style.display='none';
-  result.innerHTML="Upload or capture a new photo";
-});
-
-function resetAttemptData(){
-  currentAttempt=null;
-  savedAttempts=[];
-  attemptCount=0;
-  saveAttemptBtn.style.display='none';
-  result.innerHTML="Click 2 points: (1) Tragus, (2) C7";
-}
-
-// CAMERA
-const openCameraBtn=document.getElementById('openCameraBtn');
-const closeCameraBtn=document.getElementById('closeCameraBtn');
-const video=document.getElementById('camera');
-const snapBtn=document.getElementById('snapBtn');
-let stream=null;
-
-openCameraBtn.addEventListener('click', async ()=>{
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({video:true});
-    video.srcObject=stream;
-    video.style.display='block';
-    snapBtn.style.display='inline-block';
-    closeCameraBtn.style.display='inline-block';
-    openCameraBtn.style.display='none';
-  }catch(err){console.error(err); alert("Camera not available or permission denied.");}
-});
-
-snapBtn.addEventListener('click', async ()=>{
-  if(!video.videoWidth) return;
-  canvas.width=video.videoWidth*0.6;
-  canvas.height=video.videoHeight*0.6;
-  ctx.drawImage(video,0,0,canvas.width,canvas.height);
-  img.src=canvas.toDataURL();
-  resetAttemptData();
-  if(net){
-    result.innerHTML="<span class='processing'>Processing person detection...</span>";
-    await segmentPerson(img);
-  }
-  video.style.display='none';
-  snapBtn.style.display='none';
-  closeCameraBtn.style.display='none';
-  openCameraBtn.style.display='inline-block';
-  if(stream){stream.getTracks().forEach(track=>track.stop()); stream=null;}
-});
-
-closeCameraBtn.addEventListener('click', ()=>{
-  if(stream){stream.getTracks().forEach(track=>track.stop()); stream=null;}
-  video.style.display='none';
-  snapBtn.style.display='none';
-  closeCameraBtn.style.display='none';
-  openCameraBtn.style.display='inline-block';
-});
-</script>
+  </script>
 </body>
 </html>
