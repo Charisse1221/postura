@@ -80,6 +80,7 @@ hr { border:none; border-top:1px solid #ccc; margin:10px 0; }
   <button id="resetPointsBtn" class="btn">Reset Points</button>
   <button id="resetImageBtn" class="btn">Capture / Upload Again</button>
   <button id="saveAttemptBtn" class="btn" style="display:none;">Save Attempt</button>
+  <button id="clearHistoryBtn" class="btn" style="margin-top:10px;">Clear History</button>
   <br>
 
   <canvas id="canvas"></canvas>
@@ -112,6 +113,7 @@ const openCameraBtn=document.getElementById('openCameraBtn');
 const closeCameraBtn=document.getElementById('closeCameraBtn');
 const video=document.getElementById('camera');
 const snapBtn=document.getElementById('snapBtn');
+const clearHistoryBtn=document.getElementById('clearHistoryBtn');
 
 let img=new Image();
 let currentAttempt=null;
@@ -170,18 +172,18 @@ function resetAttemptData(){
 upload.addEventListener('change', e=>{
   const file=e.target.files[0];
   if(!file) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    img.onload=async ()=>{
-      canvas.width=img.width*0.6;
-      canvas.height=img.height*0.6;
+  showProcessing(true);
+  const reader = new FileReader();
+  reader.onload = ev => {
+    img.onload = async ()=>{
+      canvas.width = img.width * 0.6;
+      canvas.height = img.height * 0.6;
       drawCanvas();
       resetAttemptData();
-      showProcessing(true);
       if(net){ await segmentPerson(img); }
       showProcessing(false);
     };
-    img.src=ev.target.result;
+    img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 });
@@ -236,8 +238,8 @@ function calculateCVA(p1,p2){
 }
 
 // DRAW LINE
-function drawLine(p1,p2){
-  ctx.strokeStyle="blue";
+function drawLine(p1,p2,color='blue'){
+  ctx.strokeStyle=color;
   ctx.beginPath();
   ctx.moveTo(p1.x,p1.y);
   ctx.lineTo(p2.x,p2.y);
@@ -260,7 +262,6 @@ canvas.addEventListener('click', e=>{
   if(!currentAttempt) currentAttempt=[];
   currentAttempt.push({x,y});
   drawCanvas();
-  // Highlight current attempt in ORANGE
   ctx.fillStyle="orange";
   currentAttempt.forEach(p=>{
     ctx.beginPath();
@@ -269,17 +270,12 @@ canvas.addEventListener('click', e=>{
   });
   if(currentAttempt.length===2){
     const dist=Math.hypot(currentAttempt[0].x-currentAttempt[1].x,currentAttempt[0].y-currentAttempt[1].y);
-    if(dist<20 || dist>400){
-      result.innerHTML="<span class='warning'>⚠️ Landmarks too close or far. Try again.</span>";
-      currentAttempt=null; return;
-    }
+    if(dist<20 || dist>400){ result.innerHTML="<span class='warning'>⚠️ Landmarks too close or far. Try again.</span>"; currentAttempt=null; return; }
     drawLine(currentAttempt[0],currentAttempt[1]);
     const tempAngle=calculateCVA(currentAttempt[0],currentAttempt[1]);
     if(tempAngle<30 || tempAngle>75){
       result.innerHTML=`<span class='warning'>⚠️ Unusual CVA angle (${tempAngle}°). Recheck points.</span>`;
-    } else {
-      result.innerHTML=`Current attempt: CVA = ${tempAngle}° <br>Click "Save Attempt" if satisfied.`;
-    }
+    } else { result.innerHTML=`Current attempt: CVA = ${tempAngle}° <br>Click "Save Attempt" if satisfied.`; }
     saveAttemptBtn.style.display='inline-block';
   }
 });
@@ -320,6 +316,7 @@ resetPointsBtn.addEventListener('click', ()=>{
   currentAttempt=null;
   saveAttemptBtn.style.display='none';
   drawCanvas();
+  displayResults();
 });
 
 // RESET IMAGE & SAVE HISTORY
@@ -346,6 +343,11 @@ resetImageBtn.addEventListener('click', ()=>{
   currentAttempt=null; savedAttempts=[]; attemptCount=0; upload.value='';
   saveAttemptBtn.style.display='none';
   result.innerHTML="Upload or capture a new photo";
+});
+
+// CLEAR HISTORY
+clearHistoryBtn.addEventListener('click', ()=>{
+  historyBox.innerHTML='';
 });
 </script>
 </body>
