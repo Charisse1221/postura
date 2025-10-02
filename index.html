@@ -127,7 +127,6 @@
 
   </div>
 
-  <!-- Scripts -->
   <script>
     function startApp() {
       document.getElementById("frontPage").style.display = "none";
@@ -207,6 +206,7 @@
     const resetPointsBtn = document.getElementById('resetPointsBtn');
     const resetImageBtn = document.getElementById('resetImageBtn');
 
+    // Reset points only (keep image)
     resetPointsBtn.addEventListener('click', () => {
       if (!canvas.width) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -215,6 +215,7 @@
       result.textContent = "Click 2 points: (1) Tragus, (2) C7";
     });
 
+    // Reset everything (image + points)
     resetImageBtn.addEventListener('click', () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       points = [];
@@ -253,6 +254,15 @@
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       points = [];
       result.textContent = "Click 2 points: (1) Tragus, (2) C7";
+      // Optionally pause/hide camera after capture
+      video.style.display = 'none';
+      snapBtn.style.display = 'none';
+      closeCameraBtn.style.display = 'none';
+      openCameraBtn.style.display = 'inline-block';
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
     });
 
     closeCameraBtn.addEventListener('click', () => {
