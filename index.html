@@ -30,7 +30,7 @@ button { background:#00796b; color:#fff; transition:0.3s; }
 button:hover { background:#004d40; }
 canvas { border:2px dashed #bdbdbd; border-radius:10px; margin-top:15px; max-width:100%; }
 video { margin-top:10px; max-width:100%; border-radius:10px; }
-#result { margin-top:15px; font-size:18px; font-weight:bold; text-align:left; }
+#result { margin-top:15px; font-size:18px; font-weight:bold; text-align:center; }
 #historyBox { margin-top:20px; text-align:left; }
 .historyCard {
   border-radius:10px;
@@ -113,16 +113,16 @@ const clearHistoryBtn=document.getElementById('clearHistoryBtn');
 const processingDiv=document.getElementById('processing');
 
 let img=new Image();
-let currentAttempt=null; // current 2 points
-let savedAttempts=[];    // saved CVA attempts
+let currentAttempt=null;
+let savedAttempts=[];
 let attemptCount=0;
 const maxAttempts=3;
-let stream=null;
-let net=null;
-let segmentationMask=null;
 const attemptColors=["red","green","blue"];
+let net=null; 
+let segmentationMask=null;
+let stream=null;
 
-// UTILITY
+// UTILITY FUNCTIONS
 function showProcessing(show){processingDiv.style.display=show?'block':'none';}
 function drawCanvas(){
   if(!img.src) return;
@@ -130,17 +130,19 @@ function drawCanvas(){
   ctx.drawImage(img,0,0,canvas.width,canvas.height);
   // redraw saved attempts
   savedAttempts.forEach((obj,i)=>{
-    ctx.strokeStyle=attemptColors[i];
-    ctx.fillStyle=attemptColors[i];
-    ctx.beginPath();
-    ctx.moveTo(obj.points[0].x,obj.points[0].y);
-    ctx.lineTo(obj.points[1].x,obj.points[1].y);
-    ctx.stroke();
-    obj.points.forEach(p=>{
+    if(obj.points){
+      ctx.strokeStyle=attemptColors[i];
+      ctx.fillStyle=attemptColors[i];
       ctx.beginPath();
-      ctx.arc(p.x,p.y,5,0,Math.PI*2);
-      ctx.fill();
-    });
+      ctx.moveTo(obj.points[0].x,obj.points[0].y);
+      ctx.lineTo(obj.points[1].x,obj.points[1].y);
+      ctx.stroke();
+      obj.points.forEach(p=>{
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,5,0,Math.PI*2);
+        ctx.fill();
+      });
+    }
   });
 }
 
@@ -166,7 +168,7 @@ upload.addEventListener('change', e=>{
       canvas.height=img.height*0.6;
       drawCanvas();
       resetAttemptData();
-      if(net) await segmentPerson(img);
+      if(net){ await segmentPerson(img); }
       showProcessing(false);
     };
     img.src=ev.target.result;
@@ -185,13 +187,16 @@ openCameraBtn.addEventListener('click', async ()=>{
     openCameraBtn.style.display='none';
   }catch(err){console.error(err); alert("Camera not available or permission denied.");}
 });
-snapBtn.addEventListener('click', ()=>{
+snapBtn.addEventListener('click', async ()=>{
   if(!video.videoWidth) return;
   canvas.width=video.videoWidth*0.6;
   canvas.height=video.videoHeight*0.6;
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
   img.src=canvas.toDataURL();
   resetAttemptData();
+  showProcessing(true);
+  if(net){ await segmentPerson(img); }
+  showProcessing(false);
   stopCamera();
 });
 closeCameraBtn.addEventListener('click', stopCamera);
@@ -207,41 +212,23 @@ function stopCamera(){
 async function segmentPerson(imgElement){
   const segmentation=await net.segmentPerson(imgElement);
   segmentationMask=segmentation.data;
+  const mask=bodyPix.toMask(segmentation,{r:0,g:255,b:0,a:80},{r:0,g:0,b:0,a:0});
+  bodyPix.drawMask(canvas,imgElement,mask,0.3,0,false);
+  result.innerHTML="Click 2 points: (1) Tragus, (2) C7";
 }
 
-// CANVAS CLICK
-canvas.addEventListener('click', e=>{
-  if(!canvas.width || attemptCount>=maxAttempts) return;
-  const rect=canvas.getBoundingClientRect();
-  const x=e.clientX-rect.left;
-  const y=e.clientY-rect.top;
+// ✅ CORRECT CVA CALCULATION
+function calculateCVA(p1,p2){
+  const Tx=p1.x,Ty=p1.y;
+  const Cx=p2.x,Cy=p2.y;
+  let angleRad=Math.atan2(Ty-Cy,Tx-Cx);
+  let angleDeg=angleRad*(180/Math.PI);
+  if(angleDeg<0) angleDeg+=180;
+  if(Tx>Cx){ if(angleDeg>90) angleDeg=180-angleDeg; }
+  else{ angleDeg=180-angleDeg; if(angleDeg>90) angleDeg=180-angleDeg; }
+  return angleDeg.toFixed(2);
+}
 
-  // check click is on person
-  if(segmentationMask){
-    const idx=Math.floor(y)*canvas.width+Math.floor(x);
-    if(segmentationMask[idx]===0){
-      result.innerHTML="<span class='warning'>⚠️ Please click only on the person.</span>";
-      return;
-    }
-  }
-
-  if(!currentAttempt) currentAttempt=[];
-  currentAttempt.push({x,y});
-  drawCanvas();
-  ctx.fillStyle="orange";
-  currentAttempt.forEach(p=>{
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,7,0,Math.PI*2);
-    ctx.fill();
-  });
-
-  if(currentAttempt.length===2){
-    drawLine(currentAttempt[0],currentAttempt[1]);
-    const tempAngle=calculateCVA(currentAttempt[0],currentAttempt[1]);
-    result.innerHTML=`Current attempt: CVA = ${tempAngle}° <br>Click "Save Attempt" if satisfied.`;
-    saveAttemptBtn.style.display='inline-block';
-  }
-});
 
 // DRAW LINE
 function drawLine(p1,p2,color='blue'){
@@ -252,15 +239,42 @@ function drawLine(p1,p2,color='blue'){
   ctx.stroke();
 }
 
-// CALCULATE CVA
-function calculateCVA(p1,p2){
-  const Tx=p1.x,Ty=p1.y;
-  const Cx=p2.x,Cy=p2.y;
-  let angleRad=Math.atan2(Ty-Cy,Tx-Cx);
-  let angleDeg=angleRad*(180/Math.PI);
-  if(angleDeg<0) angleDeg+=180;
-  return angleDeg.toFixed(2);
-}
+// CANVAS CLICK
+canvas.addEventListener('click', e=>{
+  if(!canvas.width || attemptCount>=maxAttempts){ 
+    if(attemptCount>=maxAttempts) result.innerHTML="<span class='warning'>⚠️ Maximum 3 attempts reached.</span>"; 
+    return; 
+  }
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left;
+  const y=e.clientY-rect.top;
+  if(segmentationMask){
+    const idx=Math.floor(y)*canvas.width+Math.floor(x);
+    if(segmentationMask[idx]===0){
+      result.innerHTML="<span class='warning'>⚠️ Please click only on the person.</span>";
+      return;
+    }
+  }
+  if(!currentAttempt) currentAttempt=[];
+  currentAttempt.push({x,y});
+  drawCanvas();
+  ctx.fillStyle="orange";
+  currentAttempt.forEach(p=>{
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,7,0,Math.PI*2);
+    ctx.fill();
+  });
+  if(currentAttempt.length===2){
+    const dist=Math.hypot(currentAttempt[0].x-currentAttempt[1].x,currentAttempt[0].y-currentAttempt[1].y);
+    if(dist<20 || dist>400){ result.innerHTML="<span class='warning'>⚠️ Landmarks too close or far. Try again.</span>"; currentAttempt=null; return; }
+    drawLine(currentAttempt[0],currentAttempt[1]);
+    const tempAngle=calculateCVA(currentAttempt[0],currentAttempt[1]);
+    if(tempAngle<30 || tempAngle>75){
+      result.innerHTML=`<span class='warning'>⚠️ Unusual CVA angle (${tempAngle}°). Recheck points.</span>`;
+    } else { result.innerHTML=`Current attempt: CVA = ${tempAngle}° <br>Click "Save Attempt" if satisfied.`; }
+    saveAttemptBtn.style.display='inline-block';
+  }
+});
 
 // SAVE ATTEMPT
 saveAttemptBtn.addEventListener('click', ()=>{
@@ -333,3 +347,5 @@ clearHistoryBtn.addEventListener('click', ()=>{ historyBox.innerHTML=''; });
 </script>
 </body>
 </html>
+
+
