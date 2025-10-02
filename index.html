@@ -89,6 +89,10 @@ hr { border:none; border-top:1px solid #ccc; margin:10px 0; }
 
 </div>
 
+<!-- TensorFlow + BodyPix -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0"></script>
+
 <script>
 function startApp(){document.getElementById("frontPage").style.display="none";document.getElementById("mainApp").style.display="block";}
 function goBack(){document.getElementById("mainApp").style.display="none";document.getElementById("frontPage").style.display="block";}
@@ -102,24 +106,16 @@ const saveAttemptBtn=document.getElementById('saveAttemptBtn');
 const historyBox=document.getElementById('historyBox');
 
 let img=new Image();
-let currentAttempt=null; 
-let savedAttempts=[];    
+let currentAttempt=null;
+let savedAttempts=[];
 let attemptCount=0;
 const maxAttempts=3;
 
-// Define person bounding box (adjust values to your reference image size)
-const personBounds={xMin:50,xMax:550,yMin:40,yMax:420};
+let net=null; // BodyPix model
+let segmentationMask=null;
 
-// Draw guides (always visible)
-function drawGuides(){
-  ctx.strokeStyle="rgba(0,200,0,0.6)";
-  ctx.lineWidth=2;
-  ctx.setLineDash([6,4]);
-  ctx.strokeRect(personBounds.xMin,personBounds.yMin,
-    personBounds.xMax-personBounds.xMin,
-    personBounds.yMax-personBounds.yMin);
-  ctx.setLineDash([]);
-}
+// Load BodyPix
+bodyPix.load().then(model=>{ net=model; console.log("✅ BodyPix model loaded"); });
 
 // IMAGE UPLOAD
 upload.addEventListener('change', e=>{
@@ -127,17 +123,31 @@ upload.addEventListener('change', e=>{
   if(!file) return;
   const reader=new FileReader();
   reader.onload=ev=>{
-    img.onload=()=>{
+    img.onload=async ()=>{
       canvas.width=img.width*0.6;
       canvas.height=img.height*0.6;
       ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      drawGuides();
       resetAttemptData();
+      if(net) await segmentPerson(img);
     };
     img.src=ev.target.result;
   };
   reader.readAsDataURL(file);
 });
+
+// PERSON SEGMENTATION + faint highlight
+async function segmentPerson(imgElement){
+  const segmentation = await net.segmentPerson(imgElement);
+  segmentationMask = segmentation.data;
+
+  const mask = bodyPix.toMask(
+    segmentation,
+    { r: 0, g: 255, b: 0, a: 80 },  // faint green overlay
+    { r: 0, g: 0, b: 0, a: 0 }       // transparent background
+  );
+
+  bodyPix.drawMask(canvas, imgElement, mask, 0.3, 0, false);
+}
 
 // CANVAS CLICK
 canvas.addEventListener('click', e=>{
@@ -146,10 +156,13 @@ canvas.addEventListener('click', e=>{
   const x=e.clientX-rect.left;
   const y=e.clientY-rect.top;
 
-  // Check if inside person bounds
-  if(x<personBounds.xMin||x>personBounds.xMax||y<personBounds.yMin||y>personBounds.yMax){
-    alert("Please click within the person area (inside the green box).");
-    return;
+  // Error-checking: only allow clicks on person
+  if(segmentationMask){
+    const idx=(Math.floor(y)*canvas.width+Math.floor(x));
+    if(segmentationMask[idx]===0){
+      alert("⚠️ Please click only on the person.");
+      return;
+    }
   }
 
   if(!currentAttempt) currentAttempt=[];
@@ -159,7 +172,6 @@ canvas.addEventListener('click', e=>{
   ctx.beginPath();
   ctx.arc(x,y,5,0,Math.PI*2);
   ctx.fill();
-  drawGuides();
 
   if(currentAttempt.length===2){
     drawLine(currentAttempt[0],currentAttempt[1]);
@@ -176,7 +188,6 @@ function drawLine(p1,p2){
   ctx.moveTo(p1.x,p1.y);
   ctx.lineTo(p2.x,p2.y);
   ctx.stroke();
-  drawGuides();
 }
 
 // CALCULATE CVA
@@ -217,8 +228,10 @@ const resetPointsBtn=document.getElementById('resetPointsBtn');
 resetPointsBtn.addEventListener('click', ()=>{
   if(!canvas.width) return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(img.src) ctx.drawImage(img,0,0,canvas.width,canvas.height);
-  drawGuides();
+  if(img.src){
+    ctx.drawImage(img,0,0,canvas.width,canvas.height);
+    if(segmentationMask) segmentPerson(img);
+  }
   currentAttempt=null;
   saveAttemptBtn.style.display='none';
   displayResults();
@@ -247,7 +260,6 @@ resetImageBtn.addEventListener('click', ()=>{
   result.innerHTML="Upload or capture a new photo";
 });
 
-// Reset attempt
 function resetAttemptData(){
   currentAttempt=null;
   savedAttempts=[];
@@ -274,14 +286,14 @@ openCameraBtn.addEventListener('click', async ()=>{
   }catch(err){console.error(err); alert("Camera not available or permission denied.");}
 });
 
-snapBtn.addEventListener('click', ()=>{
+snapBtn.addEventListener('click', async ()=>{
   if(!video.videoWidth) return;
   canvas.width=video.videoWidth*0.6;
   canvas.height=video.videoHeight*0.6;
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
-  drawGuides();
   img.src=canvas.toDataURL();
   resetAttemptData();
+  if(net) await segmentPerson(img);
   video.style.display='none';
   snapBtn.style.display='none';
   closeCameraBtn.style.display='none';
