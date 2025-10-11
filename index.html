@@ -7,45 +7,58 @@
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #FFD54F, #FFEE58);
+      background: linear-gradient(160deg, #FFFDE7, #FFF9C4, #FFF59D);
+      color: #4a4a4a;
       margin: 0;
       text-align: center;
-      color: #333;
     }
 
     header {
-      padding: 20px;
+      position: sticky;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 15px 25px;
+      background: rgba(255, 255, 240, 0.85);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 10;
     }
 
     header img {
-      width: 120px;
+      width: 55px;
+      height: 55px;
       border-radius: 50%;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      margin-right: 15px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.2);
     }
 
-    h1 {
-      font-size: 2em;
-      margin: 10px 0;
+    header h1 {
+      font-size: 1.8em;
+      margin: 0;
+      color: #5c4b00;
     }
 
     #controls {
-      margin: 20px;
+      margin-top: 30px;
     }
 
     button {
-      background: #fff59d;
+      background: #ffecb3;
       border: none;
       padding: 10px 20px;
       margin: 5px;
       border-radius: 8px;
-      font-weight: bold;
+      font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      color: #4a4a4a;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
       transition: 0.2s;
     }
 
     button:hover {
-      background: #ffee58;
+      background: #ffe082;
       transform: scale(1.05);
     }
 
@@ -53,18 +66,20 @@
       margin-top: 20px;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      max-width: 90%;
+      max-width: 95%;
     }
 
     video {
       display: none;
       border-radius: 12px;
+      margin-top: 20px;
     }
 
     #angleDisplay {
       margin-top: 15px;
       font-size: 1.2em;
       font-weight: bold;
+      color: #3e2723;
     }
   </style>
 </head>
@@ -72,7 +87,6 @@
   <header>
     <img src="logo.png" alt="POSTURA Logo" />
     <h1>POSTURA</h1>
-    <p>Smart Posture Angle Measurement</p>
   </header>
 
   <div id="controls">
@@ -85,7 +99,6 @@
 
   <video id="camera" autoplay playsinline></video>
   <canvas id="canvas"></canvas>
-
   <div id="angleDisplay"></div>
 
   <script>
@@ -166,7 +179,9 @@
       captureBtn.style.display = 'none';
     });
 
+    // --- CLICK TO MARK POINTS + HORIZONTAL BASELINE TO THE LEFT ---
     canvas.addEventListener('click', (e) => {
+      if (!canvas.width) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -177,18 +192,31 @@
       ctx.arc(x, y, 5, 0, 2 * Math.PI);
       ctx.fill();
 
+      // When two points are selected
       if (points.length === 2) {
         const [p1, p2] = points;
-        drawLine(p1, p2, '#FFD700'); // main line
 
-        const lowerPoint = p1.y > p2.y ? p1 : p2;
-        const baselineEnd = { x: lowerPoint.x + 100, y: lowerPoint.y };
-        drawLine(lowerPoint, baselineEnd, 'white');
+        // Posture line
+        drawLine(p1, p2, '#FFD700');
 
+        // Lower point (reference for baseline)
+        const lower = p1.y > p2.y ? p1 : p2;
+
+        // Draw baseline to the LEFT
+        const baselineEnd = { x: 0, y: lower.y };
+        drawLine(lower, baselineEnd, 'white');
+
+        // Calculate angle
         const dx = p2.x - p1.x;
         const dy = p2.y - p1.y;
-        const angle = Math.abs(Math.atan2(dy, dx) * (180 / Math.PI));
-        angleDisplay.textContent = `Angle: ${angle.toFixed(2)}°`;
+        let angle = Math.abs(Math.atan2(dy, dx) * (180 / Math.PI));
+        if (angle > 90) angle = 180 - angle;
+
+        // Display angle
+        ctx.fillStyle = 'black';
+        ctx.font = 'bold 18px Poppins';
+        ctx.fillText(`${angle.toFixed(2)}°`, lower.x - 60, lower.y - 10);
+        angleDisplay.textContent = `CVA: ${angle.toFixed(2)}°`;
 
         points = []; // reset for next
       }
