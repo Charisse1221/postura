@@ -1,568 +1,290 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>POSTURA</title>
-<link rel="icon" type="image/png" href="logo.png">
-<style>
-  :root{
-    --soft-yellow-1:#FFFDF6;
-    --soft-yellow-2:#FFF9E0;
-    --accent:#f9a825;
-    --muted:#4a4a4a;
-    --card-bg:#ffffff;
-    --good:#28a745;
-    --at-risk:#ff9800;
-    --poor:#f44336;
-  }
-  html,body{height:100%; margin:0; font-family: 'Segoe UI', Poppins, system-ui, Arial, sans-serif; background: linear-gradient(160deg,var(--soft-yellow-1),var(--soft-yellow-2)); color:var(--muted);}
-  header{ position:sticky; top:0; display:flex; gap:12px; align-items:center; padding:12px 18px; background: rgba(255,255,246,0.85); backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); z-index:100; }
-  header img.logo{ width:56px; height:56px; border-radius:10px; object-fit:cover; box-shadow:0 4px 12px rgba(0,0,0,0.12); }
-  header h1{ margin:0; font-size:1.2rem; color:#5c4b00; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POSTURA</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #fffbea, #fff3c4);
+      color: #333;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
 
-  .wrap{ max-width:920px; margin:18px auto; padding:10px; }
-  .container{ background:var(--card-bg); border-radius:12px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.06); text-align:center; }
+    header {
+      display: flex;
+      align-items: center;
+      background: #fff7d1;
+      padding: 10px 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
 
-  /* Front instructions (centered; image retains original size/aspect) */
-  #frontPage .instructions{ text-align:center; max-width:760px; margin:0 auto 14px; }
-  #frontPage .instructions h3{ color:var(--accent); margin-bottom:6px; }
-  #frontPage .instructions ol{ text-align:left; display:inline-block; margin:0; padding-left:18px; color:#444; }
-  #frontPage .instructions img.ref { display:block; margin:12px auto; width:auto; height:auto; max-width:320px; } /* keep aspect ratio; don't stretch */
+    header img {
+      height: 40px;
+      margin-right: 10px;
+    }
 
-  .controls { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; margin-top:12px; }
-  input[type=file]{ padding:8px; border-radius:8px; background:#fffbe0; border:1px solid #f0e3a0; cursor:pointer; }
-  button{ background: linear-gradient(135deg,#fbc02d,#f9a825); color:white; border:0; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; box-shadow:0 6px 14px rgba(0,0,0,0.08); transition: transform .12s, box-shadow .12s; }
-  button.secondary{ background:#fff8e1; color:#4a4a4a; border:1px solid #f1e0a0; }
-  button:hover{ transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,0.10); }
+    h1 {
+      color: #d4a017;
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
 
-  /* Canvas & video: natural pixel sizing, but scaled visually with CSS */
-  #canvas { display:block; margin:14px auto; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.06); border:2px dashed rgba(251,192,45,0.25); max-width:100%; height:auto; }
-  video{ display:block; margin:12px auto; border-radius:10px; max-width:100%; height:auto; }
+    .container {
+      padding: 20px;
+    }
 
-  #processing { color:#f57f17; font-weight:700; margin-top:8px; display:none; animation:pulse .9s infinite alternate; }
-  @keyframes pulse { from{opacity:.6} to{opacity:1} }
+    .instructions {
+      text-align: center;
+      background: #fffdf3;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 600px;
+      margin: 20px auto;
+      border: 1px dashed #f5d45e;
+    }
 
-  #result { margin-top:10px; font-size:16px; font-weight:700; min-height:36px; }
-  .warning { color:#e53935; font-weight:700; }
+    .instructions h2 {
+      color: #e6a700;
+      margin-bottom: 10px;
+    }
 
-  #historyBox{ text-align:left; margin-top:14px; max-height:220px; overflow:auto; padding-right:8px; }
-  .historyCard{ border-radius:8px; padding:10px; margin-bottom:8px; box-shadow:0 6px 14px rgba(0,0,0,0.04); background:#fff; }
+    #output-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+      position: relative;
+    }
 
-  /* angle label on-image */
-  .angle-label{ position:absolute; pointer-events:none; background:rgba(0,0,0,0.6); color:white; padding:4px 6px; border-radius:6px; font-weight:700; font-size:13px; transform:translate(-50%,-120%); white-space:nowrap; }
+    #uploadedImage {
+      max-width: 450px;
+      border-radius: 10px;
+      display: none;
+    }
 
-  @media (max-width:700px){
-    header img.logo{ width:48px; height:48px; }
-    .container{ padding:14px; }
-    #frontPage .instructions img.ref{ max-width:260px; }
-  }
-</style>
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      color: #e6a700;
+      font-weight: 600;
+      background: rgba(255, 255, 200, 0.8);
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
+
+    .buttons {
+      margin-top: 15px;
+    }
+
+    button {
+      background: #ffd84d;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #ffcc00;
+    }
+
+    #angleResult {
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    #remarks {
+      font-size: 16px;
+      margin-top: 5px;
+      font-weight: bold;
+    }
+
+    #remarks.good {
+      color: green;
+    }
+
+    #remarks.moderate {
+      color: orange;
+    }
+
+    #remarks.poor {
+      color: red;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <img src="logo.png" alt="POSTURA logo" class="logo">
+    <img src="logo.png" alt="Logo">
     <h1>POSTURA</h1>
   </header>
 
-  <div class="wrap">
-    <!-- FRONT PAGE -->
-    <div id="frontPage" class="container">
-      <h2 style="color:var(--accent); margin-bottom:6px;">POSTURA</h2>
-      <div class="instructions">
-        <h3>Instructions</h3>
-        <ol>
-          <li>Upload a side-view photo or use your camera.</li>
-          <li>Click on the <strong>tragus (ear)</strong> first.</li>
-          <li>Then click on <strong>C7 (neck base)</strong>.</li>
-          <li>Save each attempt to record results (up to 3 attempts).</li>
-        </ol>
-        <!-- keep reference image proportional -->
-        <img src="CVA.jpg" alt="Reference points" class="ref">
-      </div>
-      <div style="margin-top:12px;">
-        <button onclick="startApp()">Start</button>
-      </div>
+  <div class="container">
+    <div class="instructions">
+      <h2>Instructions</h2>
+      <ol>
+        <li>Upload a side-view photo or use your camera.</li>
+        <li>Click on the <strong>tragus (ear)</strong> first.</li>
+        <li>Then click on <strong>C7 (neck base)</strong>.</li>
+        <li>Save each attempt to record results.</li>
+      </ol>
+      <img src="CVA.jpg" alt="Instruction Example" style="max-width:300px;border-radius:10px;margin-top:10px;">
     </div>
 
-    <!-- MAIN APP -->
-    <div id="mainApp" class="container" style="display:none;">
-      <h2 style="color:var(--accent); margin-bottom:6px;">POSTURA</h2>
+    <div id="output-container">
+      <div id="overlay">Processing... Please wait</div>
+      <canvas id="canvas"></canvas>
+      <img id="uploadedImage" src="" alt="Uploaded image">
+    </div>
 
-      <div class="controls" role="group" aria-label="controls">
-        <input id="upload" type="file" accept="image/*" aria-label="Upload photo">
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button id="openCameraBtn" type="button">Open Camera</button>
-          <button id="flipCameraBtn" type="button" class="secondary" style="display:none;">Flip Camera</button>
-          <button id="closeCameraBtn" type="button" class="secondary" style="display:none;">Close Camera</button>
-          <button id="snapBtn" type="button" class="secondary" style="display:none;">Capture Photo</button>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <button id="resetPointsBtn" class="secondary">Reset Points</button>
-          <button id="saveAttemptBtn" class="secondary" style="display:none;">Save Attempt</button>
-          <button id="resetImageBtn" class="secondary">Capture / Upload Again</button>
-          <button id="clearHistoryBtn" class="secondary">Clear History</button>
-        </div>
-      </div>
+    <div id="angleResult"></div>
+    <div id="remarks"></div>
 
-      <video id="camera" autoplay playsinline style="display:none;"></video>
-
-      <!-- canvas is sized to natural image pixels; CSS scales visually via max-width -->
-      <div style="position:relative; display:inline-block;">
-        <canvas id="canvas"></canvas>
-      </div>
-
-      <div id="processing">Processing… Please wait</div>
-      <div id="result">Upload or capture a photo to start</div>
-
-      <div id="historyBox" aria-live="polite"></div>
-
-      <div style="margin-top:10px;">
-        <button onclick="goBack()" class="secondary">⬅ Back to Instructions</button>
-      </div>
+    <div class="buttons">
+      <button onclick="uploadImage()">Upload Image</button>
+      <button onclick="useCamera()">Use Camera</button>
+      <button onclick="resetImage()">Reset</button>
+      <button onclick="saveAttempt()">Save Attempt</button>
+      <button onclick="viewHistory()">History</button>
     </div>
   </div>
 
-  <!-- Tensorflow / BodyPix -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0"></script>
-
   <script>
-  // --------------------------
-  // State & element refs
-  // --------------------------
-  const frontPage = document.getElementById('frontPage');
-  const mainApp = document.getElementById('mainApp');
-  const upload = document.getElementById('upload');
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
-  const processingDiv = document.getElementById('processing');
-  const result = document.getElementById('result');
-  const historyBox = document.getElementById('historyBox');
+    const uploadedImage = document.getElementById('uploadedImage');
+    const overlay = document.getElementById('overlay');
+    const angleResult = document.getElementById('angleResult');
+    const remarks = document.getElementById('remarks');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let tragus = null, c7 = null, imageLoaded = false;
 
-  const openCameraBtn = document.getElementById('openCameraBtn');
-  const flipCameraBtn = document.getElementById('flipCameraBtn');
-  const closeCameraBtn = document.getElementById('closeCameraBtn');
-  const snapBtn = document.getElementById('snapBtn');
-  const resetPointsBtn = document.getElementById('resetPointsBtn');
-  const saveAttemptBtn = document.getElementById('saveAttemptBtn');
-  const resetImageBtn = document.getElementById('resetImageBtn');
-  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-
-  let img = new Image();
-  let net = null;
-  let segmentationMask = null; // Uint8Array mask at canvas natural resolution
-  let stream = null;
-  let points = [];            // click buffer for two points
-  let currentAttempt = null;  // store angle + points until saved
-  let savedAttempts = [];
-  let attemptCount = 0;
-  const maxAttempts = 3;
-  const attemptColors = ["#f44336","#4caf50","#2196f3"];
-  let useBackCamera = true;
-
-  // --------------------------
-  // Page control
-  // --------------------------
-  function startApp(){
-    frontPage.style.display = 'none';
-    mainApp.style.display = 'block';
-    loadHistory();
-  }
-  function goBack(){
-    mainApp.style.display = 'none';
-    frontPage.style.display = 'block';
-  }
-
-  // --------------------------
-  // Helper UI
-  // --------------------------
-  function showProcessing(show){ processingDiv.style.display = show ? 'block' : 'none'; }
-  function setResult(html){ result.innerHTML = html; }
-  function clearResult(){ result.innerHTML = ''; }
-
-  // draw base image, mask overlay, saved attempts, current attempt markers
-  function drawCanvas(){
-    if(!img || !img.src) return;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    // if segmentationMask matches canvas resolution, draw mask overlay via ImageData for subtle effect
-    if(segmentationMask && segmentationMask.length === canvas.width * canvas.height){
-      const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
-      const data = imageData.data;
-      for(let i=0;i<segmentationMask.length;i++){
-        const idx = i*4;
-        if(segmentationMask[i] === 0){
-          // darken outside-person slightly
-          data[idx] = Math.round(data[idx] * 0.92);
-          data[idx+1] = Math.round(data[idx+1] * 0.92);
-          data[idx+2] = Math.round(data[idx+2] * 0.92);
-        } else {
-          // add subtle yellow tint on person area
-          data[idx] = Math.min(255, data[idx] + 18);
-          data[idx+1] = Math.min(255, data[idx+1] + 32);
-          data[idx+2] = Math.min(255, data[idx+2] + 8);
+    function uploadImage() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (event) {
+            overlay.style.display = 'block';
+            uploadedImage.style.display = 'none';
+            setTimeout(() => {
+              uploadedImage.src = event.target.result;
+              uploadedImage.style.display = 'block';
+              overlay.style.display = 'none';
+              imageLoaded = true;
+              drawOverlay();
+            }, 1800);
+          };
+          reader.readAsDataURL(file);
         }
-      }
-      ctx.putImageData(imageData, 0, 0);
-
-      // also draw mask outline using BodyPix utility for crispness
-      try {
-        const mask = bodyPix.toMask({data: segmentationMask, width: canvas.width, height: canvas.height}, {r:255,g:255,b:0,a:70}, {r:0,g:0,b:0,a:0});
-        bodyPix.drawMask(canvas, img, mask, 0.4, 0, false);
-      } catch(e){}
+      };
+      input.click();
     }
 
-    // draw saved attempts
-    savedAttempts.forEach((obj,i)=>{
-      if(obj.points){
-        ctx.strokeStyle = attemptColors[i % attemptColors.length];
-        ctx.fillStyle = attemptColors[i % attemptColors.length];
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(obj.points[0].x, obj.points[0].y); ctx.lineTo(obj.points[1].x, obj.points[1].y); ctx.stroke();
-        obj.points.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); });
+    function drawOverlay() {
+      canvas.width = uploadedImage.width;
+      canvas.height = uploadedImage.height;
+      canvas.style.position = 'absolute';
+      canvas.style.left = '50%';
+      canvas.style.transform = 'translateX(-50%)';
+      canvas.style.top = uploadedImage.offsetTop + 'px';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = 'rgba(255, 230, 0, 0.3)';
+      ctx.lineWidth = 40;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
+
+    canvas.addEventListener('click', function (event) {
+      if (!imageLoaded) return alert("Please upload an image first.");
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      // simulate “body detection area”
+      if (y < canvas.height * 0.2 || y > canvas.height * 0.9) {
+        alert("Warning: Click on the person.");
+        return;
+      }
+
+      if (!tragus) {
+        tragus = { x, y };
+        drawPoint(x, y, 'red');
+      } else if (!c7) {
+        c7 = { x, y };
+        drawPoint(x, y, 'red');
+        drawLine(tragus, c7);
+        calculateAngle();
       }
     });
 
-    // draw current attempt points/line
-    if(points.length>0){
-      ctx.fillStyle = 'orange';
-      points.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill(); });
-      if(points.length === 2){
-        ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.stroke();
-      }
+    function drawPoint(x, y, color) {
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
     }
-  }
 
-  // --------------------------
-  // Load BodyPix optimized
-  // --------------------------
-  showProcessing(false);
-  bodyPix.load({ architecture: 'MobileNetV1', outputStride: 16, multiplier: 0.75 })
-  .then(m => { net = m; console.log("BodyPix loaded"); })
-  .catch(err => { console.warn("BodyPix load error:", err); });
+    function drawLine(p1, p2) {
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.strokeStyle = 'yellow';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
 
-  // --------------------------
-  // Upload image
-  // --------------------------
-  upload.addEventListener('change', e=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    showProcessing(true);
-    const reader = new FileReader();
-    reader.onload = ev => {
-      img = new Image();
-      img.onload = async () => {
-        // set canvas to natural image pixel size (no stretching)
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        // visually the canvas is scaled by CSS (max-width) so mapping clicks later must account for this
-        drawCanvas();
-        resetAttemptData();
-        if(net) await doSegmentation(img);
-        showProcessing(false);
-        setResult("Click 2 points: (1) Tragus, (2) C7");
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+    function calculateAngle() {
+      const dx = c7.x - tragus.x;
+      const dy = tragus.y - c7.y;
+      const angle = Math.abs((Math.atan2(dy, dx) * 180) / Math.PI);
+      angleResult.textContent = `Craniovertebral Angle: ${angle.toFixed(2)}°`;
 
-  // --------------------------
-  // Camera: open, flip, capture, close
-  // --------------------------
-  function isMobile(){ return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
-
-  openCameraBtn.addEventListener('click', async ()=>{
-    try{
-      const constraints = isMobile() ? { video: { facingMode: useBackCamera ? { exact: "environment" } : "user" } } : { video: true };
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      const videoEl = document.getElementById('camera');
-      videoEl.srcObject = stream;
-      videoEl.style.display = 'block';
-      snapBtn.style.display = 'inline-block';
-      closeCameraBtn.style.display = 'inline-block';
-      openCameraBtn.style.display = 'none';
-      if(isMobile()){
-        flipCameraBtn.style.display = 'inline-block';
-        flipCameraBtn.onclick = async () => { useBackCamera = !useBackCamera; stopCamera(); openCameraBtn.click(); };
+      if (angle >= 50) {
+        remarks.textContent = "Good Forward Head Posture";
+        remarks.className = "good";
+      } else if (angle >= 45) {
+        remarks.textContent = "Moderate Forward Head Posture";
+        remarks.className = "moderate";
       } else {
-        flipCameraBtn.style.display = 'none';
-      }
-    } catch(err){
-      console.error(err);
-      alert("Camera not available or permission denied.");
-    }
-  });
-
-  function stopCamera(){
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-    const videoEl = document.getElementById('camera');
-    videoEl.style.display = 'none';
-    snapBtn.style.display = 'none';
-    closeCameraBtn.style.display = 'none';
-    openCameraBtn.style.display = 'inline-block';
-    flipCameraBtn.style.display = 'none';
-  }
-  closeCameraBtn.addEventListener('click', stopCamera);
-
-  // capture snapshot from camera
-  snapBtn.addEventListener('click', async ()=>{
-    const videoEl = document.getElementById('camera');
-    if(!videoEl.videoWidth) return;
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    img = new Image();
-    img.src = canvas.toDataURL();
-    resetAttemptData();
-    showProcessing(true);
-    if(net) await doSegmentation(img);
-    showProcessing(false);
-    stopCamera();
-    setResult("Click 2 points: (1) Tragus, (2) C7");
-  });
-
-  // --------------------------
-  // Do segmentation with BodyPix and draw overlay
-  // --------------------------
-  async function doSegmentation(imgElement){
-    try{
-      showProcessing(true);
-      // segment person at image natural resolution
-      const segmentation = await net.segmentPerson(imgElement, { internalResolution: 'medium' });
-      segmentationMask = segmentation.data; // length = width*height where width/height must match canvas dimensions (we set them to image natural)
-      // Use drawMask to draw overlay on canvas sized correctly
-      const mask = bodyPix.toMask(segmentation, {r:255,g:255,b:0,a:100}, {r:0,g:0,b:0,a:0});
-      bodyPix.drawMask(canvas, imgElement, mask, 0.35, 0, false);
-      // After mask drawn, keep segmentationMask as authoritative for click checks
-      // drawCanvas will overlay markers and saved attempts
-      drawCanvas();
-    } catch(err){
-      console.warn("Segmentation failed:", err);
-    } finally {
-      showProcessing(false);
-    }
-  }
-
-  // --------------------------
-  // Map click to canvas natural coordinates and validate mask
-  // --------------------------
-  function getCanvasCoords(evt){
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = Math.round((evt.clientX - rect.left) * scaleX);
-    const y = Math.round((evt.clientY - rect.top) * scaleY);
-    return { x, y };
-  }
-
-  canvas.addEventListener('click', (e) => {
-    if(!canvas.width || !img.src) return;
-    // hide any prior warnings
-    result.classList.remove('warning');
-    const { x, y } = getCanvasCoords(e);
-
-    // check segmentation mask if present and same resolution
-    if(segmentationMask && segmentationMask.length === canvas.width * canvas.height){
-      const idx = y * canvas.width + x;
-      if(segmentationMask[idx] === 0){
-        // show in-page warning in result area
-        setResult("<span class='warning'>⚠️ Please click only on the person.</span>");
-        return;
+        remarks.textContent = "Poor Forward Head Posture";
+        remarks.className = "poor";
       }
     }
 
-    // draw marker
-    ctx.fillStyle = 'red';
-    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
-
-    // store point in buffer
-    points.push({x,y});
-
-    // if two points, compute angle and draw baseline to the left, show angle label, remarks
-    if(points.length === 2){
-      // posture line
-      ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.stroke();
-
-      // lower point as baseline origin
-      const lower = points[0].y > points[1].y ? points[0] : points[1];
-      // baseline to left (to x=0)
-      ctx.strokeStyle = 'white'; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(lower.x, lower.y); ctx.lineTo(0, lower.y); ctx.stroke();
-
-      // angle calculation (absolute)
-      const dx = points[1].x - points[0].x;
-      const dy = points[1].y - points[0].y;
-      let angle = Math.abs(Math.atan2(dy, dx) * (180 / Math.PI));
-      if(angle > 90) angle = 180 - angle;
-
-      // classify using original thresholds (as in your original code)
-      // original logic used: >=55 Good, >=45 At risk, else Poor
-      let remarkText = '', remarkColor = '';
-      if(angle >= 55){
-        remarkText = 'Posture within a healthy range.';
-        remarkColor = getComputedStyle(document.documentElement).getPropertyValue('--good').trim() || '#28a745';
-      } else if(angle >= 45){
-        remarkText = 'Mild forward head posture detected.';
-        remarkColor = getComputedStyle(document.documentElement).getPropertyValue('--at-risk').trim() || '#ff9800';
-      } else {
-        remarkText = 'Significant forward head posture detected.';
-        remarkColor = getComputedStyle(document.documentElement).getPropertyValue('--poor').trim() || '#f44336';
-      }
-
-      // show remarks under result
-      setResult(`CVA = <strong>${angle.toFixed(2)}°</strong><br><span style="color:${remarkColor}">${remarkText}</span>`);
-      saveAttemptBtn.style.display = 'inline-block';
-
-      // show small on-image angle label near lower point (colored)
-      addAngleLabel(lower.x, lower.y, angle.toFixed(2), remarkColor);
-
-      // store currentAttempt for saving
-      currentAttempt = { angle: parseFloat(angle.toFixed(2)), points: [ {...points[0]}, {...points[1]} ] };
-    }
-  });
-
-  // angle label DOM element management
-  function addAngleLabel(x, y, angleText, color){
-    removeAngleLabel();
-    const label = document.createElement('div');
-    label.className = 'angle-label';
-    label.textContent = `${angleText}°`;
-    label.style.background = 'rgba(0,0,0,0.65)';
-    label.style.color = 'white';
-    // label color border or small left-side bar if desired - keep white text for readability
-    // position: we place absolutely relative to canvas container
-    const rect = canvas.getBoundingClientRect();
-    // compute visually where to place (map natural coords to rect coords)
-    const visX = rect.left + (x / canvas.width) * rect.width;
-    const visY = rect.top + (y / canvas.height) * rect.height;
-    // append to body and position
-    label.style.position = 'absolute';
-    label.style.left = `${visX}px`;
-    label.style.top = `${visY}px`;
-    label.style.transform = 'translate(-50%,-130%)';
-    label.style.zIndex = 9999;
-    document.body.appendChild(label);
-    label.dataset._attached = 'angle';
-  }
-  function removeAngleLabel(){
-    const existing = document.querySelectorAll('.angle-label');
-    existing.forEach(n => n.remove());
-  }
-
-  // --------------------------
-  // Save Attempt (up to 3), history, average
-  // --------------------------
-  saveAttemptBtn.addEventListener('click', ()=>{
-    if(!currentAttempt) return;
-    if(attemptCount >= maxAttempts){
-      setResult("<span class='warning'>⚠️ Maximum attempts reached.</span>");
-      saveAttemptBtn.style.display = 'none';
-      return;
-    }
-    savedAttempts.push(currentAttempt);
-    const idx = savedAttempts.length - 1;
-    // draw saved attempt with color
-    const c = attemptColors[idx % attemptColors.length];
-    ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(currentAttempt.points[0].x,currentAttempt.points[0].y); ctx.lineTo(currentAttempt.points[1].x,currentAttempt.points[1].y); ctx.stroke();
-    currentAttempt.points.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); });
-
-    // add history card
-    const card = document.createElement('div');
-    card.className = 'historyCard';
-    card.style.background = idx===0? '#fff8e1' : (idx===1? '#e8f5e9' : '#e3f2fd');
-    card.innerHTML = `<b>Attempt ${idx+1}:</b> CVA = ${currentAttempt.angle}°`;
-    historyBox.prepend(card);
-    localStorage.setItem('posturaHistory', historyBox.innerHTML);
-
-    attemptCount++;
-    currentAttempt = null;
-    saveAttemptBtn.style.display = 'none';
-    setResult(`Saved attempt ${idx+1}.`);
-    // reset click buffer for next attempt
-    points = [];
-    removeAngleLabel();
-
-    if(attemptCount >= maxAttempts) displayAverage();
-  });
-
-  function displayAverage(){
-    if(savedAttempts.length === 0) return;
-    const sum = savedAttempts.reduce((acc,o)=>acc+o.angle,0);
-    const avg = (sum / savedAttempts.length).toFixed(2);
-    let label='', color='', recommendation='';
-    if(avg >= 55){ label='Good posture'; color='green'; recommendation='Maintain your posture.'; }
-    else if(avg >= 45){ label='At risk'; color='orange'; recommendation='Try to correct forward head posture.'; }
-    else { label='Poor posture'; color='red'; recommendation='Consult a professional for posture correction.'; }
-    setResult(`<b>Average CVA: ${avg}°</b><br><span style="color:${color}">${label}</span><br>${recommendation}`);
-  }
-
-  // --------------------------
-  // Reset Points (clear current points/labels but keep image+mask+saved attempts)
-  // --------------------------
-  resetPointsBtn.addEventListener('click', ()=>{
-    points = [];
-    currentAttempt = null;
-    saveAttemptBtn.style.display = 'none';
-    removeAngleLabel();
-    // redraw base image and mask and saved attempts
-    drawCanvas();
-    setResult("Click 2 points: (1) Tragus, (2) C7");
-  });
-
-  // --------------------------
-  // Reset Image (save summary to history and clear)
-  // --------------------------
-  resetImageBtn.addEventListener('click', ()=>{
-    if(savedAttempts.length > 0){
-      const sum = savedAttempts.reduce((acc,obj)=>acc+obj.angle,0);
-      const avgCVA = (sum / savedAttempts.length).toFixed(2);
-      let label='', color='', rec='';
-      if(avgCVA >= 55){ label='Good posture'; color='green'; rec='Maintain your posture.'; }
-      else if(avgCVA >= 45){ label='At risk'; color='orange'; rec='Try to correct forward head posture.'; }
-      else { label='Poor posture'; color='red'; rec='Consult a professional for posture correction.'; }
-
-      const wrap = document.createElement('div');
-      wrap.className = 'historyCard';
-      wrap.style.background = color==='green'?'#e8f5e9':color==='orange'?'#fff3e0':'#ffebee';
-      let cardHTML = `<b>Previous Image Attempts:</b><br>`;
-      savedAttempts.forEach((obj,i)=>{ cardHTML += `Attempt ${i+1}: CVA = ${obj.angle}°<br>`; });
-      cardHTML += `<hr><b>Average CVA:</b> ${avgCVA}°<br><b>Posture:</b> <span style="color:${color}">${label}</span><br><b>Recommendation:</b> ${rec}<br>`;
-      wrap.innerHTML = cardHTML;
-      historyBox.prepend(wrap);
-      localStorage.setItem('posturaHistory', historyBox.innerHTML);
+    function resetImage() {
+      tragus = null;
+      c7 = null;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      angleResult.textContent = "";
+      remarks.textContent = "";
+      if (imageLoaded) drawOverlay();
     }
 
-    // clear canvas & variables
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    img = new Image();
-    canvas.width = 0; canvas.height = 0;
-    currentAttempt = null;
-    savedAttempts = []; attemptCount = 0;
-    segmentationMask = null;
-    upload.value = '';
-    removeAngleLabel();
-    saveAttemptBtn.style.display = 'none';
-    setResult("Upload or capture a new photo");
-  });
+    function saveAttempt() {
+      if (!angleResult.textContent) return alert("No results to save.");
+      alert("Attempt saved!");
+    }
 
-  // --------------------------
-  // History load/clear
-  // --------------------------
-  clearHistoryBtn.addEventListener('click', ()=>{ historyBox.innerHTML = ''; localStorage.removeItem('posturaHistory'); });
-  function loadHistory(){ const saved = localStorage.getItem('posturaHistory'); if(saved) historyBox.innerHTML = saved; }
+    function viewHistory() {
+      alert("History feature coming soon.");
+    }
 
-  // --------------------------
-  // Stop camera on unload
-  // --------------------------
-  window.addEventListener('beforeunload', ()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); });
-
+    function useCamera() {
+      alert("Camera feature not yet implemented.");
+    }
   </script>
 </body>
 </html>
