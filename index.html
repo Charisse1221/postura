@@ -21,7 +21,7 @@
   /* Header */
   header{
     position:sticky;top:0;display:flex;align-items:center;gap:12px;padding:12px 18px;
-    background: rgba(255,255,246,0.9);backdrop-filter: blur(6px);box-shadow:0 2px 8px rgba(0,0,0,0.06);z-index:100;
+    background: rgba(255,255,246,0.95);backdrop-filter: blur(6px);box-shadow:0 2px 8px rgba(0,0,0,0.06);z-index:100;
   }
   header img.logo{width:56px;height:56px;border-radius:10px;object-fit:cover;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.12)}
   header h1{margin:0;font-size:1.2rem;color:#5c4b00}
@@ -41,6 +41,7 @@
   input[type=file]{padding:8px;border-radius:8px;background:#fffbe0;border:1px solid #f0e3a0;cursor:pointer}
   button{background:linear-gradient(135deg,#fbc02d,#f9a825);color:white;border:0;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer;box-shadow:0 6px 14px rgba(0,0,0,0.08);transition:transform .12s,box-shadow .12s}
   button.secondary{background:#fff8e1;color:#4a4a4a;border:1px solid #f1e0a0}
+  button.danger{background:linear-gradient(135deg,#ef5350,#e53935)}
   button:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,0.10)}
 
   /* Canvas/video container */
@@ -51,7 +52,7 @@
   /* Processing overlay (centered, fade) */
   .processingBox{
     position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    background: rgba(255, 249, 200, 0.92);
+    background: rgba(255, 249, 200, 0.96);
     backdrop-filter: blur(4px);
     padding:12px 18px;border-radius:10px;font-weight:700;color:#5c4b00;
     box-shadow:0 8px 20px rgba(0,0,0,0.08);opacity:0;pointer-events:none;transition:opacity .25s;
@@ -71,15 +72,18 @@
 
   /* History (collapsible) */
   .historyWrap{max-width:820px;margin:12px auto;text-align:left}
-  .historyHeader{display:flex;align-items:center;justify-content:space-between}
-  .historyPanel{background:#fff;border-radius:10px;padding:10px;margin-top:8px;box-shadow:0 6px 18px rgba(0,0,0,0.04);display:none}
-  .historyCard{padding:10px;border-top:1px solid #eee}
+  .historyHeader{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .historyPanel{background:#fff;border-radius:10px;padding:10px;margin-top:8px;box-shadow:0 6px 18px rgba(0,0,0,0.04);display:none;max-height:320px;overflow:auto}
+  .historyCard{padding:10px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .historyLeft{display:block}
+  .historyTag{padding:6px 8px;border-radius:8px;font-weight:700}
   .divider{height:1px;background:#e0e0e0;margin:8px 0}
 
   /* small screens */
   @media(max-width:700px){
     header img.logo{width:48px;height:48px}
     .instructions img.ref{max-width:260px}
+    .historyCard{flex-direction:column;align-items:flex-start}
   }
 </style>
 </head>
@@ -149,7 +153,10 @@
       <div class="historyWrap">
         <div class="historyHeader">
           <div style="font-weight:700">History</div>
-          <div id="historyCount" style="color:#666">0</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div id="historyCount" style="color:#666">0</div>
+            <button id="clearHistoryBtn" class="danger" style="background:linear-gradient(135deg,#ef5350,#e53935);border:0;padding:6px 10px;border-radius:10px;color:white;font-size:0.9rem">Clear History</button>
+          </div>
         </div>
         <div id="historyPanel" class="historyPanel"></div>
       </div>
@@ -180,6 +187,7 @@ const resetPointsBtn = document.getElementById('resetPointsBtn');
 const saveAttemptBtn = document.getElementById('saveAttemptBtn');
 const resetImageBtn = document.getElementById('resetImageBtn');
 const toggleHistoryBtn = document.getElementById('toggleHistoryBtn');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -197,16 +205,21 @@ const recentText = document.getElementById('recentText');
 let net = null;
 let img = new Image();
 let segmentationMask = null; // Uint8Array length = canvas.width*canvas.height
+let segmentationMeta = null; // store full segmentation object for better toMask usage
 let stream = null;
 
 let points = []; // click buffer [p1,p2]
 let currentAttempt = null;
-let savedAttempts = [];
+let savedAttempts = []; // holds attempts for current image
 let attemptCount = 0;
 const maxAttempts = 3;
 const attemptColors = ["#f44336","#4caf50","#2196f3"];
 
 let useBackCamera = true;
+
+/* persistent history across images (stored as array of summaries) */
+const LS_HISTORY_KEY = 'posturaHistoryData';
+let globalHistory = [];
 
 /* ======= helpers ======= */
 function showProcessing(show){
@@ -228,35 +241,35 @@ function getCanvasCoords(evt){
 
 /* draw base image, mask overlay, attempts and current points */
 function drawCanvas(){
-  if(!img.src) return;
+  if(!img.src) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.drawImage(img,0,0,canvas.width,canvas.height);
 
-  // if we have segmentation mask of same resolution -> tint and overlay
+  // stronger segmentation overlay when available
   if(segmentationMask && segmentationMask.length === canvas.width * canvas.height){
     try{
-      // subtle per-pixel tint
+      // subtle per-pixel tint to emphasize person region (increase contrast slightly)
       const id = ctx.getImageData(0,0,canvas.width,canvas.height);
       const data = id.data;
       for(let i=0;i<segmentationMask.length;i++){
         const idx = i*4;
         if(segmentationMask[i] === 0){
-          // dim outside
-          data[idx] = Math.round(data[idx]*0.92);
-          data[idx+1] = Math.round(data[idx+1]*0.92);
-          data[idx+2] = Math.round(data[idx+2]*0.92);
+          // dim outside stronger
+          data[idx] = Math.round(data[idx]*0.78);
+          data[idx+1] = Math.round(data[idx+1]*0.78);
+          data[idx+2] = Math.round(data[idx+2]*0.78);
         } else {
           // brighten person slightly
-          data[idx] = Math.min(255, data[idx] + 18);
-          data[idx+1] = Math.min(255, data[idx+1] + 32);
-          data[idx+2] = Math.min(255, data[idx+2] + 8);
+          data[idx] = Math.min(255, data[idx] + 26);
+          data[idx+1] = Math.min(255, data[idx+1] + 34);
+          data[idx+2] = Math.min(255, data[idx+2] + 12);
         }
       }
       ctx.putImageData(id,0,0);
-      // draw crisp mask outline using bodyPix if available
-      if(net){
-        const mask = bodyPix.toMask({data: segmentationMask, width: canvas.width, height: canvas.height}, {r:255,g:255,b:0,a:90},{r:0,g:0,b:0,a:0});
-        bodyPix.drawMask(canvas, img, mask, 0.35, 0, false);
+      // draw crisp mask outline using bodyPix with increased mask opacity
+      if(net && segmentationMeta){
+        const mask = bodyPix.toMask(segmentationMeta, {r:255,g:255,b:0,a:160}, {r:0,g:0,b:0,a:0});
+        bodyPix.drawMask(canvas, img, mask, 0.55, 0, false); // increased opacity for visibility
       }
     }catch(e){ console.warn('mask overlay error',e); }
   }
@@ -267,14 +280,21 @@ function drawCanvas(){
       ctx.strokeStyle = attemptColors[i % attemptColors.length];
       ctx.fillStyle = attemptColors[i % attemptColors.length];
       ctx.lineWidth = 3;
-      ctx.setLineDash([]); // solid
+      ctx.setLineDash([]);
       ctx.beginPath();
       ctx.moveTo(s.points[0].x, s.points[0].y);
       ctx.lineTo(s.points[1].x, s.points[1].y);
       ctx.stroke();
       s.points.forEach(p=>{
-        ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill();
       });
+
+      // draw the dashed baseline for saved attempt
+      if(s.baseline){
+        ctx.setLineDash([6,6]); ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(s.baseline.start.x, s.baseline.start.y); ctx.lineTo(s.baseline.end.x, s.baseline.end.y); ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
   });
 
@@ -291,7 +311,7 @@ function drawCanvas(){
       ctx.lineTo(points[1].x, points[1].y);
       ctx.stroke();
 
-      // baseline drawing handled when angle computed (we keep it here if currentAttempt saved)
+      // draw baseline if currentAttempt has baseline
       if(currentAttempt && currentAttempt.baseline){
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
@@ -327,16 +347,15 @@ upload.addEventListener('change', e=>{
       // set canvas to image natural size (no stretching)
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
-      // hide canvas content until segmentation done - show processing overlay
+      // reset state and show processing
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      segmentationMask = null;
-      drawCanvas(); // blank image
+      segmentationMask = null; segmentationMeta = null;
+      drawCanvas();
       points = []; currentAttempt = null; saveAttemptBtn.style.display='none'; clearResult(); removeAngleLabelNodes();
       // run segmentation and then show image+overlay
       if(net){
         await doSegmentation(img);
       } else {
-        // if bodypix not loaded, just draw image
         ctx.drawImage(img,0,0,canvas.width,canvas.height);
       }
       showProcessing(false);
@@ -384,7 +403,7 @@ snapBtn.addEventListener('click', async ()=>{
   img = new Image();
   img.src = canvas.toDataURL();
   // reset state
-  segmentationMask = null; points = []; currentAttempt = null; saveAttemptBtn.style.display='none';
+  segmentationMask = null; segmentationMeta = null; points = []; currentAttempt = null; saveAttemptBtn.style.display='none';
   clearResult(); removeAngleLabelNodes();
   showProcessing(true);
   if(net) await doSegmentation(img);
@@ -400,12 +419,13 @@ async function doSegmentation(imgElement){
     // Ensure canvas dimensions match image natural size
     canvas.width = img.naturalWidth;
     canvas.height = img.naturalHeight;
-    // segmentation
+    // segmentation (store full object for toMask usage)
     const segmentation = await net.segmentPerson(imgElement, { internalResolution: 'medium' });
     segmentationMask = segmentation.data; // Uint8Array length = width*height
-    // draw mask overlay with bodyPix utility, which will paint onto canvas
-    const mask = bodyPix.toMask(segmentation, {r:255,g:255,b:0,a:100}, {r:0,g:0,b:0,a:0});
-    bodyPix.drawMask(canvas, imgElement, mask, 0.35, 0, false);
+    segmentationMeta = segmentation; // keep object for toMask
+    // draw mask overlay with bodyPix utility, higher alpha for visibility
+    const mask = bodyPix.toMask(segmentation, {r:255,g:255,b:0,a:160}, {r:0,g:0,b:0,a:0});
+    bodyPix.drawMask(canvas, imgElement, mask, 0.55, 0, false);
     // then overlay our markers/attempts
     drawCanvas();
   }catch(err){ console.warn('Segmentation error', err); }
@@ -417,7 +437,7 @@ canvas.addEventListener('click', (e)=>{
   if(!canvas.width || !img.src) return;
   const {x,y} = getCanvasCoords(e);
 
-  // click outside mask -> warning
+  // click outside mask -> warning (if mask exists)
   if(segmentationMask && segmentationMask.length === canvas.width*canvas.height){
     const idx = y * canvas.width + x;
     if(segmentationMask[idx] === 0){
@@ -426,66 +446,67 @@ canvas.addEventListener('click', (e)=>{
     }
   }
 
-  // draw marker
-  ctx.fillStyle = 'red';
-  ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
-
   // push to points
   points.push({x,y});
+
+  // immediately redraw to ensure previous drawings are cleared and new markers shown
+  currentAttempt = null; saveAttemptBtn.style.display='none';
+  drawCanvas();
+
+  // draw marker (we rely on drawCanvas but add immediate visual feedback)
+  ctx.fillStyle = 'red';
+  ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
 
   if(points.length === 2){
     // draw measurement line (solid blue)
     ctx.strokeStyle = '#1976d2'; ctx.lineWidth = 3; ctx.setLineDash([]); ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.stroke();
+    ctx.moveTo(points[0].x,points[0].y); ctx.lineTo(points[1].x,points[1].y); ctx.stroke();
 
-    // determine best horizontal baseline direction (left or right) to keep angle <= 90
+    // compute dx/dy
     const dx = points[1].x - points[0].x;
     const dy = points[1].y - points[0].y;
     const deg = 180/Math.PI;
+    // angle with horizontal pointing to right
     const angleRight = Math.abs(Math.atan2(dy, dx) * deg);
-    const angleLeft = Math.abs(Math.atan2(dy, -dx) * deg); // angle vs horizontal pointing left
+    // angle with horizontal pointing to left (reverse dx sign)
+    const angleLeft = Math.abs(Math.atan2(dy, -dx) * deg);
 
-    // choose smaller angle direction
+    // choose smaller angle direction (ensures angle <= 90)
     let chosenAngle = Math.min(angleRight, angleLeft);
-    // if chosenAngle > 90 => popup and do not save
+
+    // if chosenAngle > 90 => it is outside expected range (very vertical) -> warn and abort
     if(chosenAngle > 90){
-      // draw baseline anyway for visualization, using default horizontal to right
+      // draw baseline anyway (default right)
       const lower = (points[0].y > points[1].y) ? points[0] : points[1];
       ctx.setLineDash([6,6]); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.beginPath();
       ctx.moveTo(lower.x, lower.y); ctx.lineTo(canvas.width, lower.y); ctx.stroke(); ctx.setLineDash([]);
       alert('⚠️ Angle exceeds expected range (> 90°). Please recheck the points.');
-      // leave points so user can reset; show no result
       setResult('');
       angleValDiv.textContent = '';
       remarkDiv.textContent = '';
       return;
     }
 
-    // compute angle using chosen direction: if angleLeft smaller, baseline extends left; else right
+    // determine baseline direction (left or right) to make the angle acute visually:
+    // If angleLeft smaller -> baseline extends left from the lower point, else right.
     const lower = (points[0].y > points[1].y) ? points[0] : points[1];
     let baselineStart = {x: lower.x, y: lower.y}, baselineEnd;
+    // Extend the baseline sufficiently (to edges of canvas) in chosen direction
     if(angleLeft <= angleRight){
-      // extend baseline left (to x=0)
-      baselineEnd = {x: 0, y: lower.y};
+      baselineEnd = {x: 0, y: lower.y}; // extend left edge
     } else {
-      // extend baseline right (to canvas.width)
-      baselineEnd = {x: canvas.width, y: lower.y};
+      baselineEnd = {x: canvas.width, y: lower.y}; // extend right edge
     }
 
-    // draw dashed black baseline
+    // draw dashed baseline
     ctx.setLineDash([6,6]); ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(baselineStart.x, baselineStart.y); ctx.lineTo(baselineEnd.x, baselineEnd.y); ctx.stroke();
     ctx.setLineDash([]);
 
-    // final angle: compute relative to horizontal (use chosen baseline): angle between measurement vector and horizontal direction
-    // simpler: angle = min(angleRight, angleLeft) (already computed)
-    const angle = Math.min(angleRight, angleLeft);
+    // angle is the chosenAngle (already ensured <= 90)
+    const angle = chosenAngle;
 
-    // show angle and remark below image (no on-image label)
-    angleValDiv.textContent = `CVA: ${angle.toFixed(2)}°`;
-
-    // classification according to original thresholds (as you used before):
-    // >=55 Good, >=45 At risk, else Poor
+    // classification thresholds
     let remarkText='', remarkClass='';
     if(angle >= 55){
       remarkText = 'Posture within a healthy range.';
@@ -497,15 +518,17 @@ canvas.addEventListener('click', (e)=>{
       remarkText = 'Significant forward head posture detected.';
       remarkClass = 'poor';
     }
+    angleValDiv.textContent = `CVA: ${angle.toFixed(2)}°`;
     remarkDiv.textContent = remarkText;
     remarkDiv.className = remarkClass;
 
-    // set result message
     setResult(`Click "Save Attempt" if satisfied or "Reset Points" to try again.`);
     saveAttemptBtn.style.display = 'inline-block';
 
     // store currentAttempt including baseline endpoints for redraw when saving/reseting
-    currentAttempt = { angle: parseFloat(angle.toFixed(2)), points: [ {...points[0]}, {...points[1]} ], baseline: { start: baselineStart, end: baselineEnd } };
+    currentAttempt = { angle: parseFloat(angle.toFixed(2)), points: [ {...points[0]}, {...points[1]} ], baseline: { start: baselineStart, end: baselineEnd }, remarkText, remarkClass };
+    // ensure baseline is visible via drawCanvas update
+    drawCanvas();
   }
 });
 
@@ -523,17 +546,27 @@ saveAttemptBtn.addEventListener('click', ()=>{
   const c = attemptColors[idx % attemptColors.length];
   ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(currentAttempt.points[0].x,currentAttempt.points[0].y); ctx.lineTo(currentAttempt.points[1].x,currentAttempt.points[1].y); ctx.stroke();
-  currentAttempt.points.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); });
+  currentAttempt.points.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill(); });
 
-  // add history card
+  // add history card for current image (but also to global history after reset image)
   const card = document.createElement('div');
   card.className = 'historyCard';
-  card.innerHTML = `<div><strong>Attempt ${idx+1}</strong>: ${currentAttempt.angle}°</div><div class="divider"></div>`;
+  const left = document.createElement('div'); left.className = 'historyLeft';
+  left.innerHTML = `<div><strong>Attempt ${idx+1}</strong>: ${currentAttempt.angle}°</div><div style="font-size:0.95rem;margin-top:6px;color:#555">${currentAttempt.remarkText}</div>`;
+  const tag = document.createElement('div');
+  tag.className = 'historyTag';
+  tag.textContent = currentAttempt.remarkText.includes('Good') ? 'Good' : (currentAttempt.remarkText.includes('Mild') ? 'At risk' : 'Poor');
+  // color tag
+  if(currentAttempt.remarkClass === 'good') tag.style.background = '#e8f5e9', tag.style.color = '#2e7d32';
+  else if(currentAttempt.remarkClass === 'atrisk') tag.style.background = '#fff8e1', tag.style.color = '#ff9800';
+  else tag.style.background = '#ffebee', tag.style.color = '#c62828';
+
+  card.appendChild(left);
+  card.appendChild(tag);
   historyPanel.prepend(card);
   historyCount.textContent = historyPanel.children.length;
 
-  localStorage.setItem('posturaHistory', historyPanel.innerHTML);
-
+  // also do not persist to global history until user resets image (so history represents previous images).
   attemptCount++;
   currentAttempt = null;
   saveAttemptBtn.style.display='none';
@@ -548,6 +581,7 @@ saveAttemptBtn.addEventListener('click', ()=>{
   if(attemptCount >= maxAttempts) computeAverage();
 });
 
+/* ======= Compute average for current image ======= */
 function computeAverage(){
   if(savedAttempts.length === 0) return;
   const sum = savedAttempts.reduce((acc,o)=>acc+o.angle,0);
@@ -561,6 +595,7 @@ function computeAverage(){
 
 /* ======= Reset Points (keeps image+overlay+saved attempts) ======= */
 resetPointsBtn.addEventListener('click', ()=>{
+  // clear only the temporary points and current attempt, keep saved attempts and mask
   points = [];
   currentAttempt = null;
   saveAttemptBtn.style.display='none';
@@ -571,32 +606,54 @@ resetPointsBtn.addEventListener('click', ()=>{
   setResult('Click 2 points: (1) Tragus, (2) C7');
 });
 
-/* ======= Reset Image (save history summary and clear) ======= */
+/* ======= Reset Image (save summary to global history and clear current) ======= */
 resetImageBtn.addEventListener('click', ()=>{
+  // If there were saved attempts, save a summary to global history list and to localStorage
   if(savedAttempts.length > 0){
     const sum = savedAttempts.reduce((acc,o)=>acc+o.angle,0);
     const avg = (sum/savedAttempts.length).toFixed(2);
-    let label='', color='';
-    if(avg >= 55){ label='Good posture'; color='#e8f5e9'; }
-    else if(avg >= 45){ label='At risk'; color='#fff3e0'; }
-    else { label='Poor posture'; color='#ffebee'; }
+    let label='';
+    if(avg >= 55) label='Good posture';
+    else if(avg >= 45) label='At risk';
+    else label='Poor posture';
 
-    const summary = document.createElement('div');
-    summary.className = 'historyCard';
-    summary.style.background = color;
-    let html = `<b>Previous Image Attempts:</b><br>`;
-    savedAttempts.forEach((s,i)=> html += `Attempt ${i+1}: CVA = ${s.angle}°<br>`);
-    html += `<hr><b>Average CVA:</b> ${avg}°<br><b>Posture:</b> ${label}<br>`;
-    summary.innerHTML = html;
-    historyPanel.prepend(summary);
-    localStorage.setItem('posturaHistory', historyPanel.innerHTML);
+    // build summary object
+    const summary = {
+      timestamp: Date.now(),
+      attempts: savedAttempts.map((s,i)=>({attempt: i+1, angle: s.angle, remark: s.remarkText})),
+      average: avg,
+      label
+    };
+    // prepend to globalHistory and persist
+    globalHistory.unshift(summary);
+    try{ localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(globalHistory)); }catch(e){ console.warn('ls save failed',e); }
+
+    // add a summary card to UI historyPanel (top)
+    const summaryCard = document.createElement('div');
+    summaryCard.className = 'historyCard';
+    summaryCard.style.background = (label==='Good posture') ? '#e8f5e9' : ((label==='At risk') ? '#fff3e0' : '#ffebee');
+    const left = document.createElement('div'); left.className='historyLeft';
+    let html = `<b>Previous Image Attempts Summary</b><div style="margin-top:6px">`;
+    summary.attempts.forEach(a=> html += `Attempt ${a.attempt}: ${a.angle}° — ${a.remark}<br>`);
+    html += `<hr style="margin:6px 0"><b>Average CVA:</b> ${avg}°<br><b>Posture:</b> ${label}</div>`;
+    left.innerHTML = html;
+    const tag = document.createElement('div');
+    tag.className = 'historyTag';
+    tag.textContent = label;
+    if(label === 'Good posture') tag.style.background = '#e8f5e9', tag.style.color = '#2e7d32';
+    else if(label === 'At risk') tag.style.background = '#fff3e0', tag.style.color = '#ff9800';
+    else tag.style.background = '#ffebee', tag.style.color = '#c62828';
+    summaryCard.appendChild(left);
+    summaryCard.appendChild(tag);
+    historyPanel.prepend(summaryCard);
+    historyCount.textContent = historyPanel.children.length;
   }
 
-  // clear everything
+  // clear everything for next image
   ctx.clearRect(0,0,canvas.width,canvas.height);
   img = new Image();
   canvas.width = 0; canvas.height = 0;
-  segmentationMask = null;
+  segmentationMask = null; segmentationMeta = null;
   points = []; currentAttempt = null;
   savedAttempts = []; attemptCount = 0;
   saveAttemptBtn.style.display='none';
@@ -610,7 +667,45 @@ toggleHistoryBtn.addEventListener('click', ()=>{
   if(historyPanel.style.display === 'block') { historyPanel.style.display = 'none'; toggleHistoryBtn.textContent = '📜 View History'; }
   else { historyPanel.style.display = 'block'; toggleHistoryBtn.textContent = '📜 Hide History'; }
 });
-function loadHistory(){ const saved = localStorage.getItem('posturaHistory'); if(saved){ historyPanel.innerHTML = saved; historyCount.textContent = historyPanel.children.length; }}
+
+clearHistoryBtn.addEventListener('click', ()=>{
+  if(!confirm('Clear all saved history? This cannot be undone.')) return;
+  globalHistory = [];
+  try{ localStorage.removeItem(LS_HISTORY_KEY); }catch(e){ console.warn('ls clear failed',e); }
+  // also clear history UI
+  historyPanel.innerHTML = '';
+  historyCount.textContent = 0;
+  setResult('History cleared.');
+});
+
+function loadHistory(){
+  try{
+    const saved = localStorage.getItem(LS_HISTORY_KEY);
+    if(saved){
+      globalHistory = JSON.parse(saved);
+      // build UI from globalHistory (most recent first)
+      historyPanel.innerHTML = '';
+      globalHistory.forEach(summary=>{
+        const card = document.createElement('div');
+        card.className = 'historyCard';
+        const left = document.createElement('div'); left.className = 'historyLeft';
+        let html = `<div style="font-weight:700">${new Date(summary.timestamp).toLocaleString()}</div><div style="margin-top:6px">`;
+        summary.attempts.forEach(a=> html += `Attempt ${a.attempt}: ${a.angle}° — ${a.remark}<br>`);
+        html += `<hr style="margin:6px 0"><b>Avg:</b> ${summary.average}° — ${summary.label}</div>`;
+        left.innerHTML = html;
+        const tag = document.createElement('div'); tag.className='historyTag'; tag.textContent = summary.label;
+        if(summary.label === 'Good posture') tag.style.background = '#e8f5e9', tag.style.color = '#2e7d32';
+        else if(summary.label === 'At risk') tag.style.background = '#fff3e0', tag.style.color = '#ff9800';
+        else tag.style.background = '#ffebee', tag.style.color = '#c62828';
+        card.appendChild(left); card.appendChild(tag);
+        historyPanel.appendChild(card);
+      });
+      historyCount.textContent = historyPanel.children.length;
+    }
+  }catch(e){
+    console.warn('failed loading history',e);
+  }
+}
 
 /* ======= Stop camera before unload ======= */
 window.addEventListener('beforeunload', ()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); });
@@ -618,6 +713,8 @@ window.addEventListener('beforeunload', ()=>{ if(stream) stream.getTracks().forE
 /* ======= Front/Main navigation ======= */
 startBtn.addEventListener('click', ()=>{ frontPage.style.display='none'; mainApp.style.display='block'; loadHistory(); });
 logoLink.addEventListener('click', ()=>{ frontPage.style.display='block'; mainApp.style.display='none'; });
+
+function goBack(){ frontPage.style.display='block'; mainApp.style.display='none'; }
 
 /* ======= Initialize (keep front visible) ======= */
 (function init(){
