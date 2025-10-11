@@ -5,551 +5,505 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>POSTURA</title>
 <style>
-  /* Page + Header */
   :root{
-    --soft-yellow-1:#FFFDE7;
-    --soft-yellow-2:#FFF9C4;
+    --soft-yellow-1:#FFFDF6;
+    --soft-yellow-2:#FFF9E0;
     --accent:#f9a825;
     --muted:#4a4a4a;
-    --card-bg: #ffffff;
+    --card-bg:#ffffff;
   }
-  html,body{height:100%; margin:0;}
-  body{
-    font-family: 'Segoe UI', Poppins, system-ui, Arial, sans-serif;
-    background: linear-gradient(160deg, var(--soft-yellow-1), var(--soft-yellow-2));
-    color:var(--muted);
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-  }
-  header{
-    position: sticky;
-    top:0;
-    display:flex;
-    gap:16px;
-    align-items:center;
-    padding:12px 18px;
-    background: rgba(255,255,240,0.85);
-    backdrop-filter: blur(6px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    z-index:100;
-  }
-  header img.logo{
-    width:56px;
-    height:56px;
-    border-radius:10px;
-    object-fit:cover;
-    box-shadow:0 4px 12px rgba(0,0,0,0.12);
-  }
-  header h1{ margin:0; font-size:1.25rem; color:#5c4b00; }
+  html,body{height:100%; margin:0; font-family: 'Segoe UI', Poppins, system-ui, Arial, sans-serif; background: linear-gradient(160deg,var(--soft-yellow-1),var(--soft-yellow-2)); color:var(--muted);}
+  header{ position:sticky; top:0; display:flex; gap:12px; align-items:center; padding:12px 18px; background: rgba(255,255,246,0.85); backdrop-filter: blur(6px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); z-index:100; }
+  header img.logo{ width:56px; height:56px; border-radius:10px; object-fit:cover; box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+  header h1{ margin:0; font-size:1.2rem; color:#5c4b00; }
 
-  /* Container */
-  .wrap{
-    max-width:880px;
-    margin:20px auto;
-    padding:18px;
-  }
-  .container{
-    background:var(--card-bg);
-    border-radius:14px;
-    padding:22px;
-    box-shadow:0 12px 30px rgba(0,0,0,0.06);
-    text-align:center;
-  }
+  .wrap{ max-width:920px; margin:18px auto; padding:10px; }
+  .container{ background:var(--card-bg); border-radius:12px; padding:20px; box-shadow:0 12px 30px rgba(0,0,0,0.06); text-align:center; }
 
-  h2{ color:var(--accent); margin:6px 0 12px; }
-  p { margin:6px 0 12px; color:#555; }
+  /* Instruction area centered */
+  #instructions { text-align:center; max-width:760px; margin:0 auto 14px; }
+  #instructions h3{ color:var(--accent); margin-bottom:6px; }
+  #instructions ol{ text-align:left; display:inline-block; margin:0; padding-left:18px; color:#444; }
+  #instructions img.ref { display:block; margin:12px auto; max-width:none; width:auto; height:auto; } /* preserve original size */
 
-  /* Controls */
-  .controls{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; margin-bottom:12px; }
-  input[type=file]{ display:inline-block; padding:8px; border-radius:8px; background:#fff7d6; border:1px solid #f0e0a0; cursor:pointer; }
-  button{
-    background: linear-gradient(135deg,#fbc02d,#f9a825);
-    color:white;
-    border:0;
-    padding:10px 14px;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:600;
-    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
-    transition: transform .12s ease, box-shadow .12s ease;
-  }
-  button:hover{ transform: translateY(-2px); box-shadow: 0 10px 22px rgba(0,0,0,0.10); }
-  button.secondary{ background:#fff3e0; color:#4a4a4a; border:1px solid #f2d38a; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; margin-top:12px; }
+  input[type=file]{ padding:8px; border-radius:8px; background:#fffbe0; border:1px solid #f0e3a0; cursor:pointer; }
+  button{ background: linear-gradient(135deg,#fbc02d,#f9a825); color:white; border:0; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; box-shadow:0 6px 14px rgba(0,0,0,0.08); transition: transform .12s, box-shadow .12s; }
+  button.secondary{ background:#fff8e1; color:#4a4a4a; border:1px solid #f1e0a0; }
+  button:hover{ transform:translateY(-2px); box-shadow:0 10px 22px rgba(0,0,0,0.10); }
 
-  /* Canvas / Video */
-  canvas{ width:100%; max-height:560px; border-radius:12px; border:2px dashed rgba(251, 192, 45, 0.25); display:block; margin:12px auto; }
-  video{ width:100%; max-height:480px; border-radius:12px; display:block; margin:12px auto; }
+  /* Canvas/video: use natural pixel size for canvas; scale visually with max-width */
+  #canvas { display:block; margin:14px auto; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,0.06); border:2px dashed rgba(251,192,45,0.25); max-width:100%; height:auto; }
+  video{ display:block; margin:12px auto; border-radius:10px; max-width:100%; height:auto; }
 
-  /* Info boxes */
-  #result{ margin-top:12px; font-size:18px; font-weight:700; color:#333; min-height:36px; }
-  .processing{ color:#f57f17; font-weight:700; animation:pulse .9s infinite alternate; }
+  #processing { color:#f57f17; font-weight:700; margin-top:8px; display:none; animation:pulse .9s infinite alternate; }
   @keyframes pulse { from{opacity:.6} to{opacity:1} }
 
-  /* History */
-  #historyBox{ margin-top:18px; text-align:left; max-height:240px; overflow:auto; padding-right:6px; }
-  .historyCard{
-    border-radius:10px; padding:10px 12px; margin-bottom:10px;
-    box-shadow:0 6px 14px rgba(0,0,0,0.04); background:#fff;
-  }
+  #result { margin-top:10px; font-size:16px; font-weight:700; min-height:36px; }
+  .warning { color:#e53935; font-weight:700; }
 
-  /* Small screens */
-  @media (max-width:600px){
-    header{ padding:10px 12px; gap:10px; }
-    .wrap{ padding:10px; }
-    .container{ padding:14px; }
+  /* History */
+  #historyBox{ text-align:left; margin-top:14px; max-height:220px; overflow:auto; padding-right:8px; }
+  .historyCard{ border-radius:8px; padding:10px; margin-bottom:8px; box-shadow:0 6px 14px rgba(0,0,0,0.04); background:#fff; }
+
+  /* Small screens tweaks */
+  @media (max-width:700px){
     header img.logo{ width:48px; height:48px; }
+    .container{ padding:14px; }
+    #instructions img.ref{ max-width:320px; }
   }
 </style>
 </head>
 <body>
+  <header>
+    <img src="logo.png" alt="POSTURA logo" class="logo">
+    <h1>POSTURA</h1>
+  </header>
 
-<header>
-  <!-- logo.png is in repository as requested; visible on every page -->
-  <img src="logo.png" alt="POSTURA logo" class="logo">
-  <h1>POSTURA</h1>
-</header>
-
-<div class="wrap">
-  <!-- FRONT PAGE -->
-  <div id="frontPage" class="container">
-    <h2>POSTURA</h2>
-    <p>Welcome to <strong>POSTURA</strong> — a tool to measure <strong>Cervical Vertebral Angle (CVA)</strong>.</p>
-
-    <div style="text-align:left; max-width:760px; margin:0 auto;">
-      <h3 style="color:var(--accent); margin-bottom:6px;">Instructions</h3>
-      <ol>
-        <li>Upload a side-view photo or use your camera.</li>
-        <li>Click on the <strong>tragus (ear)</strong> first.</li>
-        <li>Then click on <strong>C7 (neck base)</strong>.</li>
-        <li>Save each attempt to record results (up to 3 attempts).</li>
-      </ol>
-      <img src="tragus.jpg" alt="Reference points" style="display:block; max-width:300px; margin:10px 0;">
-    </div>
-
-    <div style="margin-top:14px;">
-      <button onclick="startApp()">Start</button>
-    </div>
-  </div>
-
-  <!-- MAIN APP -->
-  <div id="mainApp" class="container" style="display:none;">
-    <h2>POSTURA</h2>
-
-    <div class="controls" aria-hidden="false">
-      <input id="upload" type="file" accept="image/*" aria-label="Upload photo">
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button id="openCameraBtn" type="button">Open Camera</button>
-        <button id="flipCameraBtn" type="button" style="display:none;" class="secondary">Flip Camera</button>
-        <button id="closeCameraBtn" type="button" style="display:none;" class="secondary">Close Camera</button>
-        <button id="snapBtn" type="button" style="display:none;">Capture Photo</button>
+  <div class="wrap">
+    <!-- FRONT PAGE -->
+    <div id="frontPage" class="container">
+      <h2 style="color:var(--accent); margin-bottom:6px;">POSTURA</h2>
+      <div id="instructions">
+        <h3>Instructions</h3>
+        <ol>
+          <li>Upload a side-view photo or use your camera.</li>
+          <li>Click on the <strong>tragus (ear)</strong> first.</li>
+          <li>Then click on <strong>C7 (neck base)</strong>.</li>
+          <li>Save each attempt to record results (up to 3 attempts).</li>
+        </ol>
+        <!-- keep reference image original size; do not stretch -->
+        <img src="CVA.jpg" alt="Reference points" class="ref">
       </div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button id="resetPointsBtn" class="secondary">Reset Points</button>
-        <button id="saveAttemptBtn" class="secondary" style="display:none;">Save Attempt</button>
-        <button id="resetImageBtn" class="secondary">Capture / Upload Again</button>
-        <button id="clearHistoryBtn" class="secondary">Clear History</button>
+
+      <div style="margin-top:12px;">
+        <button onclick="startApp()">Start</button>
       </div>
     </div>
 
-    <video id="camera" autoplay playsinline style="display:none;"></video>
-    <canvas id="canvas"></canvas>
+    <!-- MAIN APP -->
+    <div id="mainApp" class="container" style="display:none;">
+      <h2 style="color:var(--accent); margin-bottom:6px;">POSTURA</h2>
 
-    <div id="processing" class="processing" style="display:none;">Processing… Please wait</div>
-    <div id="result">Upload or capture a photo to start</div>
+      <div class="controls" role="group" aria-label="controls">
+        <input id="upload" type="file" accept="image/*" aria-label="Upload photo">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="openCameraBtn" type="button">Open Camera</button>
+          <button id="flipCameraBtn" type="button" class="secondary" style="display:none;">Flip Camera</button>
+          <button id="closeCameraBtn" type="button" class="secondary" style="display:none;">Close Camera</button>
+          <button id="snapBtn" type="button" class="secondary" style="display:none;">Capture Photo</button>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="resetPointsBtn" class="secondary">Reset Points</button>
+          <button id="saveAttemptBtn" class="secondary" style="display:none;">Save Attempt</button>
+          <button id="resetImageBtn" class="secondary">Capture / Upload Again</button>
+          <button id="clearHistoryBtn" class="secondary">Clear History</button>
+        </div>
+      </div>
 
-    <div id="historyBox" aria-live="polite"></div>
+      <video id="camera" autoplay playsinline style="display:none;"></video>
 
-    <div style="margin-top:10px;">
-      <button onclick="goBack()" class="secondary">⬅ Back to Instructions</button>
+      <!-- canvas uses image natural pixel size; CSS scales it visually but clicks are mapped correctly -->
+      <canvas id="canvas"></canvas>
+
+      <div id="processing">Processing... Please wait</div>
+      <div id="result">Upload or capture a photo to start</div>
+
+      <div id="historyBox" aria-live="polite"></div>
+
+      <div style="margin-top:10px;">
+        <button onclick="goBack()" class="secondary">⬅ Back to Instructions</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Tensorflow / BodyPix -->
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0"></script>
+  <!-- Tensorflow / BodyPix -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0"></script>
 
-<script>
-/* ============================
-   Variables (app state)
-   ============================ */
-const frontPage = document.getElementById('frontPage');
-const mainApp = document.getElementById('mainApp');
-const upload = document.getElementById('upload');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const result = document.getElementById('result');
-const processingDiv = document.getElementById('processing');
-const historyBox = document.getElementById('historyBox');
+  <script>
+  // App state and elements
+  const frontPage = document.getElementById('frontPage');
+  const mainApp = document.getElementById('mainApp');
+  const upload = document.getElementById('upload');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const processingDiv = document.getElementById('processing');
+  const result = document.getElementById('result');
+  const historyBox = document.getElementById('historyBox');
 
-const openCameraBtn = document.getElementById('openCameraBtn');
-const closeCameraBtn = document.getElementById('closeCameraBtn');
-const flipCameraBtn = document.getElementById('flipCameraBtn');
-const snapBtn = document.getElementById('snapBtn');
-const resetPointsBtn = document.getElementById('resetPointsBtn');
-const resetImageBtn = document.getElementById('resetImageBtn');
-const saveAttemptBtn = document.getElementById('saveAttemptBtn');
-const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  const openCameraBtn = document.getElementById('openCameraBtn');
+  const flipCameraBtn = document.getElementById('flipCameraBtn');
+  const closeCameraBtn = document.getElementById('closeCameraBtn');
+  const snapBtn = document.getElementById('snapBtn');
+  const resetPointsBtn = document.getElementById('resetPointsBtn');
+  const saveAttemptBtn = document.getElementById('saveAttemptBtn');
+  const resetImageBtn = document.getElementById('resetImageBtn');
+  const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
-let img = new Image();
-let net = null;
-let segmentationMask = null;
-let stream = null;
-let currentAttempt = null; // holds two points
-let savedAttempts = []; // up to 3 attempts (original behavior)
-let attemptCount = 0;
-const maxAttempts = 3;
-const attemptColors = ["#f44336","#4caf50","#2196f3"]; // color per attempt
-let useBackCamera = true;
+  let img = new Image();
+  let net = null;
+  let segmentationMask = null; // Uint8Array from BodyPix (1 person mask)
+  let stream = null;
+  let currentAttempt = null; // { angle, points: [p1,p2] }
+  let savedAttempts = [];
+  let attemptCount = 0;
+  const maxAttempts = 3;
+  const attemptColors = ["#f44336","#4caf50","#2196f3"];
+  let useBackCamera = true;
 
-/* ============================
-   Page control
-   ============================ */
-function startApp(){
-  frontPage.style.display='none';
-  mainApp.style.display='block';
-  loadHistory(); // restore previous history if any
-}
-function goBack(){
-  mainApp.style.display='none';
-  frontPage.style.display='block';
-}
+  // Page control
+  function startApp(){ frontPage.style.display='none'; mainApp.style.display='block'; loadHistory(); }
+  function goBack(){ mainApp.style.display='none'; frontPage.style.display='block'; }
 
-/* ============================
-   Utilities
-   ============================ */
-function showProcessing(show){ processingDiv.style.display = show ? 'block' : 'none'; }
-function drawCanvas(){ 
-  if(!img || !img.src) return;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  // show/hide processing
+  function showProcessing(show){
+    processingDiv.style.display = show ? 'block' : 'none';
+  }
 
-  // re-draw saved attempts overlays
-  savedAttempts.forEach((obj,i)=>{
-    if(obj.points){
-      ctx.strokeStyle = attemptColors[i % attemptColors.length];
-      ctx.fillStyle = attemptColors[i % attemptColors.length];
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(obj.points[0].x, obj.points[0].y);
-      ctx.lineTo(obj.points[1].x, obj.points[1].y);
-      ctx.stroke();
-      obj.points.forEach(p=>{
-        ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill();
-      });
+  // Draw base image and overlays
+  function drawCanvas(){
+    if(!img || !img.src) return;
+    // canvas already sized to img natural pixels
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // If we have segmentation mask, redraw mask overlay
+    if(segmentationMask && segmentationMask.length === canvas.width * canvas.height){
+      // create ImageData mask (green tint)
+      const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+      const data = imageData.data;
+      for(let i=0;i<segmentationMask.length;i++){
+        if(segmentationMask[i] === 0){
+          // outside person: dim slightly (multiply existing pixels)
+          const idx = i * 4;
+          // optional: darken non-person area by overlaying semi-transparent layer
+          data[idx] = Math.round(data[idx] * 0.95);
+          data[idx+1] = Math.round(data[idx+1] * 0.95);
+          data[idx+2] = Math.round(data[idx+2] * 0.95);
+          // keep alpha as is
+        } else {
+          // on-person: add subtle yellow overlay by blending
+          const idx = i * 4;
+          data[idx] = Math.min(255, data[idx] + 20);
+          data[idx+1] = Math.min(255, data[idx+1] + 40);
+          data[idx+2] = Math.min(255, data[idx+2] + 10);
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+
+      // draw a soft semi-transparent mask outline using BodyPix utilities for clarity
+      try {
+        const mask = bodyPix.toMask({data: segmentationMask, width: canvas.width, height: canvas.height}, {r:255,g:255,b:0,a:80}, {r:0,g:0,b:0,a:0});
+        bodyPix.drawMask(canvas, img, mask, 0.35, 0, false);
+      } catch(e) {
+        // fallback: we already did a subtle manual overlay above
+      }
     }
-  });
 
-  // draw current attempt markers/line if exists
-  if(currentAttempt && currentAttempt.length > 0){
-    ctx.fillStyle = 'orange';
-    currentAttempt.forEach(p=>{
-      ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill();
+    // draw saved attempts
+    savedAttempts.forEach((obj,i)=>{
+      if(obj.points){
+        ctx.strokeStyle = attemptColors[i % attemptColors.length];
+        ctx.fillStyle = attemptColors[i % attemptColors.length];
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(obj.points[0].x, obj.points[0].y); ctx.lineTo(obj.points[1].x, obj.points[1].y); ctx.stroke();
+        obj.points.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); });
+      }
     });
-    if(currentAttempt.length === 2){
-      // posture (oblique) line
-      ctx.strokeStyle = '#FFD700';
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(currentAttempt[0].x,currentAttempt[0].y); ctx.lineTo(currentAttempt[1].x,currentAttempt[1].y); ctx.stroke();
-    }
-  }
-}
 
-/* ============================
-   Load BodyPix (optimized)
-   ============================ */
-bodyPix.load({ architecture:'MobileNetV1', outputStride:16, multiplier:0.75 })
-.then(m => { net = m; console.log("✅ BodyPix loaded"); })
-.catch(err => console.warn("BodyPix load error:", err));
-
-/* ============================
-   Image upload handling
-   ============================ */
-upload.addEventListener('change', e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  showProcessing(true);
-  const reader = new FileReader();
-  reader.onload = ev => {
-    img.onload = async () => {
-      // scale canvas to 0.6 for consistent UI (as in original)
-      canvas.width = Math.round(img.width * 0.6);
-      canvas.height = Math.round(img.height * 0.6);
-      drawCanvas();
-      resetAttemptData();
-      if(net) await segmentPerson(img);
-      showProcessing(false);
-      result.innerHTML = "Click 2 points: (1) Tragus, (2) C7";
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-});
-
-/* ============================
-   Camera functions (mobile back default + flip)
-   ============================ */
-function isMobile(){ return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
-
-openCameraBtn.addEventListener('click', async ()=>{
-  await startCamera();
-});
-
-async function startCamera(){
-  try{
-    const constraints = isMobile()
-      ? { video: { facingMode: useBackCamera ? { exact: "environment" } : "user" } }
-      : { video: true };
-
-    stream = await navigator.mediaDevices.getUserMedia(constraints);
-    const video = document.getElementById('camera');
-    video.srcObject = stream;
-    video.style.display = 'block';
-    snapBtn.style.display = 'inline-block';
-    closeCameraBtn.style.display = 'inline-block';
-    openCameraBtn.style.display = 'none';
-
-    // show flip control on mobile
-    if(isMobile()){
-      flipCameraBtn.style.display = 'inline-block';
-      flipCameraBtn.onclick = async () => {
-        useBackCamera = !useBackCamera;
-        stopCamera();
-        await startCamera();
-      };
-    } else {
-      flipCameraBtn.style.display = 'none';
-    }
-  } catch(err){
-    console.error(err);
-    alert("Camera not available or permission denied.");
-  }
-}
-
-snapBtn.addEventListener('click', async ()=>{
-  const video = document.getElementById('camera');
-  if(!video.videoWidth) return;
-  canvas.width = Math.round(video.videoWidth * 0.6);
-  canvas.height = Math.round(video.videoHeight * 0.6);
-  ctx.drawImage(video,0,0,canvas.width,canvas.height);
-  img.src = canvas.toDataURL();
-  resetAttemptData();
-  showProcessing(true);
-  if(net) await segmentPerson(img);
-  showProcessing(false);
-  stopCamera();
-});
-
-closeCameraBtn.addEventListener('click', stopCamera);
-
-function stopCamera(){
-  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
-  const video = document.getElementById('camera');
-  video.style.display = 'none';
-  snapBtn.style.display = 'none';
-  closeCameraBtn.style.display = 'none';
-  openCameraBtn.style.display = 'inline-block';
-  flipCameraBtn.style.display = 'none';
-}
-
-/* ============================
-   BodyPix segmentation helper
-   ============================ */
-async function segmentPerson(imgElement){
-  try{
-    const segmentation = await net.segmentPerson(imgElement);
-    segmentationMask = segmentation.data;
-    const mask = bodyPix.toMask(segmentation, {r:255,g:255,b:0,a:100}, {r:0,g:0,b:0,a:0});
-    bodyPix.drawMask(canvas, imgElement, mask, 0.3, 0, false);
-    // re-draw currentAttempt markers if any over mask
-    drawCanvas();
-  }catch(err){
-    console.warn("Segmentation failed:", err);
-  }
-}
-
-/* ============================
-   Click handling, baseline (to left), angle & validations
-   ============================ */
-let points = []; // internal for clicks (two points per attempt)
-
-canvas.addEventListener('click', (e)=>{
-  if(!canvas.width) return;
-  const rect = canvas.getBoundingClientRect();
-  const x = Math.round(e.clientX - rect.left);
-  const y = Math.round(e.clientY - rect.top);
-
-  // If segmentation exists, ensure click is on person
-  if(segmentationMask && canvas.width > 0){
-    const idx = Math.floor(y) * canvas.width + Math.floor(x);
-    // segmentationMask length matches original image size; because we scaled canvas,
-    // segmentationMask indexing may not exactly match scaled coordinates.
-    // We'll skip strict mask check to avoid false negatives if sizes differ.
-    // If segmentation data length equals canvas.width*canvas.height we can check safely:
-    if(segmentationMask.length === canvas.width * canvas.height){
-      if(segmentationMask[idx] === 0){
-        result.innerHTML = "<span class='warning'>⚠️ Please click only on the person.</span>";
-        return;
+    // draw currentAttempt markers if present
+    if(currentAttempt && currentAttempt.points){
+      ctx.fillStyle = 'orange';
+      currentAttempt.points.forEach(p=>{
+        ctx.beginPath(); ctx.arc(p.x,p.y,6,0,Math.PI*2); ctx.fill();
+      });
+      if(currentAttempt.points.length === 2){
+        // posture line
+        ctx.strokeStyle = '#FFD700';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(currentAttempt.points[0].x,currentAttempt.points[0].y); ctx.lineTo(currentAttempt.points[1].x,currentAttempt.points[1].y); ctx.stroke();
       }
     }
   }
 
-  // Draw marker
-  ctx.fillStyle = 'red';
-  ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
+  // Load BodyPix optimized
+  showProcessing(false);
+  bodyPix.load({ architecture: 'MobileNetV1', outputStride: 16, multiplier: 0.75 })
+  .then(m => { net = m; console.log("BodyPix ready"); })
+  .catch(err => { console.warn("BodyPix load error", err); });
 
-  points.push({x,y});
-
-  // If two clicks -> compute and show angle; allow up to 3 saved attempts (same as original)
-  if(points.length === 2){
-    // draw posture line (yellow)
-    ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.stroke();
-
-    // choose lower point (C7) as baseline origin
-    const lower = (points[0].y > points[1].y) ? points[0] : points[1];
-
-    // draw horizontal baseline to the LEFT (clamped to 0)
-    const baselineEnd = { x: 0, y: lower.y };
-    ctx.strokeStyle = 'white'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(lower.x, lower.y); ctx.lineTo(baselineEnd.x, baselineEnd.y); ctx.stroke();
-
-    // calculate angle between line (p1->p2) and horizontal
-    const dx = points[1].x - points[0].x;
-    const dy = points[1].y - points[0].y;
-    let angle = Math.abs(Math.atan2(dy, dx) * (180/Math.PI));
-    if(angle > 90) angle = 180 - angle;
-
-    // angle label: left/up from lower point, keep inside canvas
-    const labelX = Math.max(8, lower.x - 70);
-    const labelY = Math.max(18, lower.y - 10);
-    ctx.fillStyle = '#212121';
-    ctx.font = 'bold 16px Segoe UI, Poppins, sans-serif';
-    ctx.fillText(`${angle.toFixed(2)}°`, labelX, labelY);
-
-    result.innerHTML = `Current attempt: CVA = <strong>${angle.toFixed(2)}°</strong> — click "Save Attempt" to record.`;
-    saveAttemptBtn.style.display = 'inline-block';
-
-    // store temporarily in currentAttempt to save later
-    currentAttempt = { angle: parseFloat(angle.toFixed(2)), points: [ {...points[0]}, {...points[1]} ] };
-
-    // prevent more than 2 points stacked for visualization
-    // do not reset points here so user can re-click Reset Points if needed
-  }
-});
-
-/* ============================
-   Save attempt, history, averaging (original behaviors)
-   ============================ */
-saveAttemptBtn.addEventListener('click', ()=>{
-  if(!currentAttempt) return;
-  if(attemptCount >= maxAttempts){
-    result.innerHTML = "<span class='warning'>⚠️ Maximum attempts reached.</span>";
-    saveAttemptBtn.style.display = 'none';
-    return;
-  }
-  savedAttempts.push(currentAttempt);
-  attemptCount++;
-  // draw saved attempt on canvas with attempt-specific color
-  const idx = savedAttempts.length - 1;
-  const c = attemptColors[idx % attemptColors.length];
-  ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.moveTo(currentAttempt.points[0].x,currentAttempt.points[0].y); ctx.lineTo(currentAttempt.points[1].x,currentAttempt.points[1].y); ctx.stroke();
-  currentAttempt.points.forEach(p=>{
-    ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill();
+  // IMAGE UPLOAD handling
+  upload.addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    showProcessing(true);
+    const reader = new FileReader();
+    reader.onload = ev => {
+      img = new Image();
+      img.onload = async () => {
+        // set canvas natural size to image natural pixels (no forced visual stretch)
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        // apply visible max-width via CSS (canvas element has max-width:100% in CSS)
+        drawCanvas();
+        resetAttemptData();
+        if(net){
+          await segmentPerson(img); // segments and redraws
+        } else {
+          showProcessing(false);
+        }
+        result.innerHTML = "Click 2 points: (1) Tragus, (2) C7";
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
   });
 
-  // append to history UI
-  const card = document.createElement('div');
-  card.className = 'historyCard';
-  const avgSoFar = savedAttempts.reduce((a,b)=>a+b.angle,0)/savedAttempts.length;
-  card.style.background = idx===0? '#fff8e1' : (idx===1? '#e8f5e9' : '#e3f2fd');
-  card.innerHTML = `<b>Attempt ${idx+1}</b>: CVA = ${currentAttempt.angle}°<br><small>Saved</small>`;
-  historyBox.prepend(card);
+  // CAMERA functions (mobile back default + flip)
+  function isMobile(){ return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
-  // persist history in localStorage
-  localStorage.setItem('posturaHistory', historyBox.innerHTML);
-  // reset currentAttempt & UI
-  currentAttempt = null;
-  saveAttemptBtn.style.display = 'none';
-  result.innerHTML = `Saved attempt ${idx+1}.`;
-  // if reached max attempts, compute average
-  if(attemptCount >= maxAttempts) displayAverage();
-});
+  openCameraBtn.addEventListener('click', async ()=>{
+    await startCamera();
+  });
 
-function displayAverage(){
-  if(savedAttempts.length === 0) return;
-  const sum = savedAttempts.reduce((a,b)=>a+b.angle,0);
-  const avg = (sum/savedAttempts.length).toFixed(2);
-  let label='', color='', recommendation='';
-  if(avg >= 55){ label='Good posture'; color='green'; recommendation='Maintain your posture.'; }
-  else if(avg >= 45){ label='At risk'; color='orange'; recommendation='Try to correct forward head posture.'; }
-  else { label='Poor posture'; color='red'; recommendation='Consult a professional for posture correction.'; }
-  result.innerHTML = `<b>Average CVA: ${avg}°</b><br><span style="color:${color}">${label}</span><br>${recommendation}`;
-}
-
-/* ============================
-   Reset points & reset image (original)
-   ============================ */
-resetPointsBtn.addEventListener('click', ()=>{
-  // redraw base image and saved attempts
-  currentAttempt = null;
-  points = [];
-  drawCanvas();
-  saveAttemptBtn.style.display = 'none';
-  result.innerHTML = "Click 2 points: (1) Tragus, (2) C7";
-});
-
-resetImageBtn.addEventListener('click', ()=>{
-  // if saved attempts exist, push history card (original behavior kept)
-  if(savedAttempts.length > 0){
-    const sum = savedAttempts.reduce((acc,obj)=>acc+obj.angle,0);
-    const avgCVA = (sum/savedAttempts.length).toFixed(2);
-    let label='', color='', rec='';
-    if(avgCVA >= 55){ label='Good posture'; color='green'; rec='Maintain your posture.'; }
-    else if(avgCVA >= 45){ label='At risk'; color='orange'; rec='Try to correct forward head posture.'; }
-    else { label='Poor posture'; color='red'; rec='Consult a professional for posture correction.'; }
-
-    const card = document.createElement('div');
-    card.className = 'historyCard';
-    card.style.background = color==='green'?'#e8f5e9':color==='orange'?'#fff3e0':'#ffebee';
-    let cardHTML = `<b>Previous Image Attempts:</b><br>`;
-    savedAttempts.forEach((obj,i)=>{ cardHTML += `Attempt ${i+1}: CVA = ${obj.angle}°<br>`; });
-    cardHTML += `<hr><b>Average CVA:</b> ${avgCVA}°<br><b>Posture:</b> <span style="color:${color}">${label}</span><br><b>Recommendation:</b> ${rec}<br>`;
-    card.innerHTML = cardHTML;
-    historyBox.prepend(card);
-    localStorage.setItem('posturaHistory', historyBox.innerHTML);
+  async function startCamera(){
+    try {
+      showProcessing(false);
+      const constraints = isMobile()
+        ? { video: { facingMode: useBackCamera ? { exact: "environment" } : "user" } }
+        : { video: true };
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const videoEl = document.getElementById('camera');
+      videoEl.srcObject = stream;
+      videoEl.style.display = 'block';
+      snapBtn.style.display = 'inline-block';
+      closeCameraBtn.style.display = 'inline-block';
+      openCameraBtn.style.display = 'none';
+      if(isMobile()){
+        flipCameraBtn.style.display = 'inline-block';
+        flipCameraBtn.onclick = async () => { useBackCamera = !useBackCamera; stopCamera(); await startCamera(); };
+      } else {
+        flipCameraBtn.style.display = 'none';
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Camera not available or permission denied.");
+    }
   }
 
-  // clear canvas & reset variables
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  img = new Image();
-  canvas.width = 0; canvas.height = 0;
-  currentAttempt = null;
-  savedAttempts = []; attemptCount = 0;
-  segmentationMask = null;
-  upload.value = '';
-  saveAttemptBtn.style.display = 'none';
-  result.innerHTML = "Upload or capture a new photo";
-});
+  snapBtn.addEventListener('click', async ()=>{
+    const videoEl = document.getElementById('camera');
+    if(!videoEl.videoWidth) return;
+    // set canvas to video natural resolution
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    img = new Image();
+    img.src = canvas.toDataURL();
+    resetAttemptData();
+    showProcessing(true);
+    if(net) await segmentPerson(img);
+    showProcessing(false);
+    stopCamera();
+    result.innerHTML = "Click 2 points: (1) Tragus, (2) C7";
+  });
 
-/* ============================
-   History clearing & loading
-   ============================ */
-clearHistoryBtn.addEventListener('click', ()=>{ historyBox.innerHTML=''; localStorage.removeItem('posturaHistory'); });
+  closeCameraBtn.addEventListener('click', stopCamera);
 
-function loadHistory(){
-  const saved = localStorage.getItem('posturaHistory');
-  if(saved) historyBox.innerHTML = saved;
-}
+  function stopCamera(){
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; }
+    const videoEl = document.getElementById('camera');
+    videoEl.style.display = 'none';
+    snapBtn.style.display = 'none';
+    closeCameraBtn.style.display = 'none';
+    openCameraBtn.style.display = 'inline-block';
+    flipCameraBtn.style.display = 'none';
+  }
 
-/* ============================
-   Page unload cleanup (stop camera)
-   ============================ */
-window.addEventListener('beforeunload', ()=>{
-  if(stream) stream.getTracks().forEach(t => t.stop());
-});
-</script>
+  // BodyPix segmentation (draw mask & set segmentationMask array)
+  async function segmentPerson(imgElement){
+    try {
+      showProcessing(true);
+      // run segmentation on the passed image element
+      const segmentation = await net.segmentPerson(imgElement, { internalResolution: 'medium' });
+      // segmentation.data is a Uint8Array of 0/1 values with length width*height
+      segmentationMask = segmentation.data;
+      // create and draw mask using API (it will draw onto canvas sized like image)
+      const mask = bodyPix.toMask(segmentation, { r:255,g:255,b:0,a:100 }, { r:0,g:0,b:0,a:0 });
+      bodyPix.drawMask(canvas, imgElement, mask, 0.35, 0, false);
+      // After mask is drawn, overlay our saved attempts and markers
+      drawCanvas();
+    } catch (err) {
+      console.warn("Segmentation failed:", err);
+    } finally {
+      showProcessing(false);
+    }
+  }
+
+  /* Click handling mapped to canvas natural pixels even when CSS scales it */
+  let points = []; // temporary click buffer (two points)
+  canvas.addEventListener('click', (e) => {
+    if(!canvas.width || !img.src) return;
+    const rect = canvas.getBoundingClientRect();
+    // map click to canvas coordinate space: account for CSS scaling
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = Math.round((e.clientX - rect.left) * scaleX);
+    const y = Math.round((e.clientY - rect.top) * scaleY);
+
+    // if segmentationMask exists and has same resolution as canvas, check it
+    if(segmentationMask && segmentationMask.length === canvas.width * canvas.height){
+      const idx = y * canvas.width + x;
+      if(segmentationMask[idx] === 0){
+        // warning in-page
+        result.innerHTML = "<span class='warning'>⚠️ Please click only on the person.</span>";
+        return;
+      }
+    }
+
+    // Draw marker on the canvas (in natural coordinate)
+    ctx.fillStyle = 'red';
+    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill();
+
+    // store point
+    points.push({x,y});
+
+    // if two points, draw posture line, baseline to left, compute angle and enable save
+    if(points.length === 2){
+      // draw yellow posture line
+      ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y); ctx.lineTo(points[1].x, points[1].y); ctx.stroke();
+
+      // determine lower point (C7)
+      const lower = points[0].y > points[1].y ? points[0] : points[1];
+
+      // draw horizontal baseline to the left (clamped to x=0)
+      const baselineStart = { x: lower.x, y: lower.y };
+      const baselineEnd = { x: 0, y: lower.y };
+      ctx.strokeStyle = 'white'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(baselineStart.x, baselineStart.y); ctx.lineTo(baselineEnd.x, baselineEnd.y); ctx.stroke();
+
+      // compute angle between line and horizontal
+      const dx = points[1].x - points[0].x;
+      const dy = points[1].y - points[0].y;
+      let angle = Math.abs(Math.atan2(dy, dx) * (180 / Math.PI));
+      if(angle > 90) angle = 180 - angle;
+
+      // display angle label placed left/up of lower point (clamped to canvas)
+      const labelX = Math.max(8, lower.x - 70);
+      const labelY = Math.max(18, lower.y - 10);
+      ctx.fillStyle = '#212121';
+      ctx.font = 'bold 16px Segoe UI, Poppins, sans-serif';
+      ctx.fillText(`${angle.toFixed(2)}°`, labelX, labelY);
+
+      result.innerHTML = `Current attempt: CVA = <strong>${angle.toFixed(2)}°</strong> — click "Save Attempt" to record.`;
+      saveAttemptBtn.style.display = 'inline-block';
+
+      // store currentAttempt (but do not auto-clear points so user can Reset Points)
+      currentAttempt = { angle: parseFloat(angle.toFixed(2)), points: [ {...points[0]}, {...points[1]} ] };
+    }
+  });
+
+  // Save attempt (up to 3) and add to history
+  saveAttemptBtn.addEventListener('click', ()=>{
+    if(!currentAttempt) return;
+    if(attemptCount >= maxAttempts){
+      result.innerHTML = "<span class='warning'>⚠️ Maximum attempts reached.</span>";
+      saveAttemptBtn.style.display = 'none';
+      return;
+    }
+    savedAttempts.push(currentAttempt);
+    const idx = savedAttempts.length - 1;
+    // draw saved attempt overlay in color
+    ctx.strokeStyle = attemptColors[idx % attemptColors.length];
+    ctx.fillStyle = attemptColors[idx % attemptColors.length];
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(currentAttempt.points[0].x,currentAttempt.points[0].y); ctx.lineTo(currentAttempt.points[1].x,currentAttempt.points[1].y); ctx.stroke();
+    currentAttempt.points.forEach(p => { ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fill(); });
+
+    // add history card
+    const card = document.createElement('div');
+    card.className = 'historyCard';
+    card.style.background = idx===0? '#fff8e1' : (idx===1? '#e8f5e9' : '#e3f2fd');
+    card.innerHTML = `<b>Attempt ${idx+1}:</b> CVA = ${currentAttempt.angle}°`;
+    historyBox.prepend(card);
+    localStorage.setItem('posturaHistory', historyBox.innerHTML);
+
+    attemptCount++;
+    currentAttempt = null;
+    saveAttemptBtn.style.display = 'none';
+    result.innerHTML = `Saved attempt ${idx+1}.`;
+    // reset points buffer for next attempt
+    points = [];
+
+    if(attemptCount >= maxAttempts) displayAverage();
+  });
+
+  function displayAverage(){
+    if(savedAttempts.length === 0) return;
+    const sum = savedAttempts.reduce((acc, o) => acc + o.angle, 0);
+    const avg = (sum / savedAttempts.length).toFixed(2);
+    let label='', color='', recommendation='';
+    if(avg >= 55){ label='Good posture'; color='green'; recommendation='Maintain your posture.'; }
+    else if(avg >= 45){ label='At risk'; color='orange'; recommendation='Try to correct forward head posture.'; }
+    else { label='Poor posture'; color='red'; recommendation='Consult a professional for posture correction.'; }
+    result.innerHTML = `<b>Average CVA: ${avg}°</b><br><span style="color:${color}">${label}</span><br>${recommendation}`;
+  }
+
+  // Reset points only (keeps image & segmentation)
+  resetPointsBtn.addEventListener('click', ()=>{
+    currentAttempt = null;
+    points = [];
+    saveAttemptBtn.style.display = 'none';
+    drawCanvas();
+    result.innerHTML = "Click 2 points: (1) Tragus, (2) C7";
+  });
+
+  // Reset Image / Save history snapshot then clear current image & attempts
+  resetImageBtn.addEventListener('click', ()=>{
+    if(savedAttempts.length > 0){
+      // compose history card with average & attempts (original behavior)
+      const sum = savedAttempts.reduce((acc,obj)=>acc+obj.angle,0);
+      const avgCVA = (sum / savedAttempts.length).toFixed(2);
+      let label='', color='', rec='';
+      if(avgCVA >= 55){ label='Good posture'; color='green'; rec='Maintain your posture.'; }
+      else if(avgCVA >= 45){ label='At risk'; color='orange'; rec='Try to correct forward head posture.'; }
+      else { label='Poor posture'; color='red'; rec='Consult a professional for posture correction.'; }
+
+      const card = document.createElement('div');
+      card.className = 'historyCard';
+      card.style.background = color==='green'?'#e8f5e9':color==='orange'?'#fff3e0':'#ffebee';
+      let cardHTML = `<b>Previous Image Attempts:</b><br>`;
+      savedAttempts.forEach((obj,i)=>{ cardHTML += `Attempt ${i+1}: CVA = ${obj.angle}°<br>`; });
+      cardHTML += `<hr><b>Average CVA:</b> ${avgCVA}°<br><b>Posture:</b> <span style="color:${color}">${label}</span><br><b>Recommendation:</b> ${rec}<br>`;
+      card.innerHTML = cardHTML;
+      historyBox.prepend(card);
+      localStorage.setItem('posturaHistory', historyBox.innerHTML);
+    }
+
+    // clear canvas and variables
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    img = new Image();
+    canvas.width = 0; canvas.height = 0;
+    currentAttempt = null;
+    savedAttempts = []; attemptCount = 0;
+    segmentationMask = null;
+    upload.value = '';
+    saveAttemptBtn.style.display = 'none';
+    result.innerHTML = "Upload or capture a new photo";
+  });
+
+  // Clear history
+  clearHistoryBtn.addEventListener('click', ()=>{ historyBox.innerHTML = ''; localStorage.removeItem('posturaHistory'); });
+
+  // Load saved history from localStorage
+  function loadHistory(){ const saved = localStorage.getItem('posturaHistory'); if(saved) historyBox.innerHTML = saved; }
+
+  // Stop camera when leaving
+  window.addEventListener('beforeunload', ()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); });
+
+  </script>
 </body>
 </html>
 
